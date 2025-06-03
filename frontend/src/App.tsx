@@ -5,13 +5,18 @@ import { useStore } from './store/useStore';
 import { MantineProvider, Center, Loader } from '@mantine/core';
 import './App.css'
 
+const PREFIX = import.meta.env.PROD
+  ? import.meta.env.VITE_BASE_PATH
+  : '/';
+
+
 function App() {
 const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFeature, 
                                       setTooltipData, setIsLoading, isLoading } = useStore();
 
 const umap = useCallback(() => {
     setIsLoading(true);
-    axios.post("http://localhost:8000/umap", {
+    axios.post(`${PREFIX}/umap`, {
       filename: "nc_aspire.xlsx",
       n_neighbors: 15,
       min_dist: 0.1,
@@ -26,7 +31,7 @@ const umap = useCallback(() => {
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [setEmbedding, setFeatureMatrix, setFeatureNames, setKeys]);
+  }, [setEmbedding, setFeatureMatrix, setSelectedFeature, setFeatureNames, setKeys]);
 
   useEffect(() => {
     umap();
