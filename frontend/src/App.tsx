@@ -47,7 +47,7 @@ const umap = useCallback(() => {
   }, [umap]);
 
 const handleFeatureClick = async (feature: string) => {
-    const res = await axios.post("http://localhost:8000/recalculate-umap", {
+    const res = await axios.post("https://dev.codementum.org/rwanda-api/recalculate-umap", {
       filename: "nc_aspire.xlsx",
       selectedFeature: feature,
       n_neighbors: 15,
