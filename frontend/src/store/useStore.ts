@@ -9,6 +9,8 @@ interface State {
   keys: string[];
   selectedKeys: string[];
   colorMap: Record<number, string>;
+  selectedLevel: string | null;
+  setSelectedLevel: (l: string | null) => void;
   setEmbedding: (e: number[][]) => void;
   setFeatureMatrix: (f: number[][]) => void;
   setSelectedIndices: (s: number[]) => void;
@@ -31,6 +33,8 @@ export const useStore = create<State>((set) => ({
     2: '#dbdb1d',
     3: '#4daf4a',
   },
+  selectedLevel: null,
+  setSelectedLevel: (l) => set({ selectedLevel: l }),
   setKeys: (k) => set({ keys: k }),
   setSelectedKeys: (k) => set({ selectedKeys: k }),
   setEmbedding: (e) => set({ umapEmbedding: e }),
