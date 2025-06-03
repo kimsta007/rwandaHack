@@ -39,7 +39,7 @@ export function Heatmap(
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         const value = selectedRows[i][j];
-        const color = colorMap[value] || '#e0e0e0';  
+        const color = colorMap[value] || '#bdbdbd';  
         ctx.fillStyle = color;
         ctx.fillRect(j * cellSize + gap + labelWidth / 2, i * cellSize + labelHeight + gap / 2, cellSize - gap, cellSize - gap);
       }

@@ -65,13 +65,13 @@ export function ScatterPlot() {
       }
 
       //ctx.fillStyle = isInside ? 'red' : 'steelblue';
-      let color = '#3b3b3b'; // default
+      let color = '#bdbdbd'; // default
       if (index !== -1 && featureMatrix[i]) {
         const val = featureMatrix[i][index];
         color = colorMap[val] || '#999999';
       }
       ctx.fillStyle = color;
-      
+
       ctx.beginPath();
       ctx.arc(cx, cy, 3.5, 0, 2 * Math.PI);
       ctx.fill();
