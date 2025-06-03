@@ -92,6 +92,7 @@ export function Heatmap(
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
+    const adjustedClickX: number = clickX - 105; // Adjust for label width
     // Check if click is within label area
     if (clickY > labelHeight) return;
 
@@ -106,8 +107,8 @@ export function Heatmap(
 
       // Approximate bounding box for rotated label
       if (
-        clickX >= rotatedBox.x &&
-        clickX <= rotatedBox.x + rotatedBox.width &&
+        adjustedClickX >= rotatedBox.x &&
+        adjustedClickX <= rotatedBox.x + rotatedBox.width &&
         clickY >= rotatedBox.y &&
         clickY <= rotatedBox.y + rotatedBox.height
       ) {
