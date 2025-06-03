@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 
 export function ScatterPlot() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { umapEmbedding, setSelectedIndices, keys, setSelectedKeys, selectedKeys, selectedIndices } = useStore();
+  const { umapEmbedding, setSelectedIndices, keys, setSelectedKeys, selectedKeys, selectedIndices, colorMap, featureMatrix, featureNames } = useStore();
 
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<[number, number]>([0, 0]);
@@ -16,6 +16,7 @@ export function ScatterPlot() {
   const [brushBox, setBrushBox] = useState<[number, number, number, number] | null>(null);
   const [isMovingBrush, setIsMovingBrush] = useState(false);
   const [moveStart, setMoveStart] = useState<[number, number] | null>(null);
+  const index = featureNames.indexOf('income'); // Color dots by income
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -63,7 +64,14 @@ export function ScatterPlot() {
         if (keys[i]) newSelectedKeys.push(keys[i]);
       }
 
-      ctx.fillStyle = isInside ? 'red' : 'steelblue';
+      //ctx.fillStyle = isInside ? 'red' : 'steelblue';
+      let color = '#3b3b3b'; // default
+      if (index !== -1 && featureMatrix[i]) {
+        const val = featureMatrix[i][index];
+        color = colorMap[val] || '#999999';
+      }
+      ctx.fillStyle = color;
+      
       ctx.beginPath();
       ctx.arc(cx, cy, 3.5, 0, 2 * Math.PI);
       ctx.fill();

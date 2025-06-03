@@ -8,6 +8,7 @@ interface State {
   selectedFeature: string;
   keys: string[];
   selectedKeys: string[];
+  colorMap: Record<number, string>;
   setEmbedding: (e: number[][]) => void;
   setFeatureMatrix: (f: number[][]) => void;
   setSelectedIndices: (s: number[]) => void;
@@ -17,7 +18,7 @@ interface State {
   setSelectedFeature: (f: string) => void;
 }
 
-export const useStore = create<State>((set, get) => ({
+export const useStore = create<State>((set) => ({
   umapEmbedding: [],
   featureMatrix: [],
   featureNames: [],
@@ -25,6 +26,11 @@ export const useStore = create<State>((set, get) => ({
   keys: [],
   selectedKeys: [],
   selectedFeature: '',
+  colorMap: {
+    1: '#984ea3',
+    2: '#dbdb1d',
+    3: '#4daf4a',
+  },
   setKeys: (k) => set({ keys: k }),
   setSelectedKeys: (k) => set({ selectedKeys: k }),
   setEmbedding: (e) => set({ umapEmbedding: e }),

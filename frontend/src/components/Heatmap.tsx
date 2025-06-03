@@ -5,18 +5,12 @@ export function Heatmap(
   { onFeatureClick }: { onFeatureClick?: (featureName: string) => void } = {}
 ) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { featureMatrix, featureNames, keys, selectedKeys, selectedFeature, setSelectedFeature} = useStore();
+  const { featureMatrix, featureNames, keys, selectedKeys, selectedFeature, setSelectedFeature, colorMap} = useStore();
 
   const cellSize = 20;
   const gap = 2;
   const labelHeight = 130;
   const labelWidth = 210;
-
-  const colorMap: Record<number, string> = {
-    1: '#984ea3', 
-    2: '#dbdb1d',  
-    3: '#4daf4a',  
-  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
