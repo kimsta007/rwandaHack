@@ -2,13 +2,15 @@ import { useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { AppShell } from './components/AppShell';
 import { useStore } from './store/useStore';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, Center, Loader } from '@mantine/core';
 import './App.css'
 
 function App() {
-const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFeature } = useStore();
+const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFeature, 
+                                      setTooltipData, setIsLoading, isLoading } = useStore();
 
 const umap = useCallback(() => {
+    setIsLoading(true);
     axios.post("http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
       n_neighbors: 15,
@@ -19,7 +21,10 @@ const umap = useCallback(() => {
       setFeatureMatrix(res.data.featureMatrix);
       setFeatureNames(res.data.featureNames);
       setKeys(res.data.familyCode);
+      setTooltipData(res.data.tooltipData);
       setSelectedFeature('');
+    }).finally(() => {
+      setIsLoading(false);
     });
   }, [setEmbedding, setFeatureMatrix, setFeatureNames, setKeys]);
 
@@ -50,7 +55,13 @@ const handleFeatureClick = async (feature: string) => {
 
 return (
   <MantineProvider theme={{}}>
-    <AppShell onFeatureClick={handleFeatureClick}/>
+    {isLoading ? (
+      <Center style={{ height: '100%' }}>
+        <Loader size="lg" />
+      </Center>
+    ) : (
+    <AppShell onFeatureClick={handleFeatureClick}/>)
+    }
   </MantineProvider>
   );
 }

@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 
-export function ScatterPlot() {
+export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => void }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { umapEmbedding, setSelectedIndices, keys, setSelectedKeys, selectedKeys, selectedIndices, colorMap, featureMatrix, featureNames } = useStore();
+  const {
+    umapEmbedding,
+    setSelectedIndices,
+    setSelectedKeys,
+    selectedIndices,
+    selectedKeys,
+    keys,
+    colorMap,
+    featureMatrix,
+    featureNames,
+  } = useStore();
 
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<[number, number]>([0, 0]);
@@ -16,37 +26,37 @@ export function ScatterPlot() {
   const [brushBox, setBrushBox] = useState<[number, number, number, number] | null>(null);
   const [isMovingBrush, setIsMovingBrush] = useState(false);
   const [moveStart, setMoveStart] = useState<[number, number] | null>(null);
-  const index = featureNames.indexOf('income'); // Color dots by income
+
+  const canvasWidth = 800;
+  const canvasHeight = 600;
+  const margin = 40;
+
+  const index = featureNames.indexOf('income');
+
+  const xExtent = [
+    Math.min(...umapEmbedding.map(d => d[0])) - 0.1,
+    Math.max(...umapEmbedding.map(d => d[0])) + 0.1,
+  ];
+  const yExtent = [
+    Math.min(...umapEmbedding.map(d => d[1])) - 0.1,
+    Math.max(...umapEmbedding.map(d => d[1])) + 0.1,
+  ];
+
+  const scaleX = (x: number) =>
+    ((x - xExtent[0]) / (xExtent[1] - xExtent[0])) * (canvasWidth - 2 * margin) * scale + offset[0] + margin;
+  const scaleY = (y: number) =>
+    canvasHeight - (((y - yExtent[0]) / (yExtent[1] - yExtent[0])) * (canvasHeight - 2 * margin) * scale + offset[1] + margin);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || umapEmbedding.length === 0) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const margin = 40;
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    const xExtent = [
-      Math.min(...umapEmbedding.map(d => d[0])) - 0.1,
-      Math.max(...umapEmbedding.map(d => d[0])) + 0.1,
-    ];
-    const yExtent = [
-      Math.min(...umapEmbedding.map(d => d[1])) - 0.1,
-      Math.max(...umapEmbedding.map(d => d[1])) + 0.1,
-    ];
-
-    const scaleX = (x: number) =>
-      ((x - xExtent[0]) / (xExtent[1] - xExtent[0])) * (width - 2 * margin) * scale + offset[0] + margin;
-    const scaleY = (y: number) =>
-      height - (((y - yExtent[0]) / (yExtent[1] - yExtent[0])) * (height - 2 * margin) * scale + offset[1] + margin);
-
-    ctx.clearRect(0, 0, width, height);
-
-    let newSelectedIndices: number[] = [];
-    let newSelectedKeys: string[] = [];
+    const newSelectedIndices: number[] = [];
+    const newSelectedKeys: string[] = [];
 
     umapEmbedding.forEach(([x, y], i) => {
       const cx = scaleX(x);
@@ -64,14 +74,13 @@ export function ScatterPlot() {
         if (keys[i]) newSelectedKeys.push(keys[i]);
       }
 
-      //ctx.fillStyle = isInside ? 'red' : 'steelblue';
-      let color = '#bdbdbd'; // default
+      let color = '#bdbdbd';
       if (index !== -1 && featureMatrix[i]) {
         const val = featureMatrix[i][index];
         color = colorMap[val] || '#999999';
       }
-      ctx.fillStyle = color;
 
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(cx, cy, 3.5, 0, 2 * Math.PI);
       ctx.fill();
@@ -90,14 +99,27 @@ export function ScatterPlot() {
       ctx.strokeStyle = 'black';
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
     }
-  }, [umapEmbedding, scale, offset, brushBox, keys, selectedIndices, selectedKeys, setSelectedIndices, setSelectedKeys]);
+  }, [
+    umapEmbedding,
+    scale,
+    offset,
+    brushBox,
+    keys,
+    selectedIndices,
+    selectedKeys,
+    setSelectedIndices,
+    setSelectedKeys,
+    featureMatrix,
+    featureNames,
+    colorMap,
+  ]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     draw();
   }, [draw]);
 
@@ -113,7 +135,13 @@ export function ScatterPlot() {
       if (e.shiftKey) {
         setIsPanning(true);
         setLastPan([e.clientX, e.clientY]);
-      } else if (brushBox && mx >= brushBox[0] && mx <= brushBox[2] && my >= brushBox[1] && my <= brushBox[3]) {
+      } else if (
+        brushBox &&
+        mx >= brushBox[0] &&
+        mx <= brushBox[2] &&
+        my >= brushBox[1] &&
+        my <= brushBox[3]
+      ) {
         setIsMovingBrush(true);
         setMoveStart([mx, my]);
       } else {
@@ -149,6 +177,15 @@ export function ScatterPlot() {
         setEnd([mx, my]);
         draw();
       }
+
+      let foundKey: string | null = null;
+      umapEmbedding.forEach(([x, y], i) => {
+        const cx = scaleX(x);
+        const cy = scaleY(y);
+        const dist = Math.hypot(mx - cx, my - cy);
+        if (dist < 6) foundKey = keys[i];
+      });
+      onHover?.(foundKey);
     };
 
     const handleMouseUp = () => {
@@ -160,7 +197,12 @@ export function ScatterPlot() {
           setSelectedKeys([]);
           setSelectedIndices([]);
         } else {
-          setBrushBox([Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2)]);
+          setBrushBox([
+            Math.min(x1, x2),
+            Math.min(y1, y2),
+            Math.max(x1, x2),
+            Math.max(y1, y2),
+          ]);
         }
         draw();
       }
@@ -234,7 +276,9 @@ export function ScatterPlot() {
     selectedKeys,
     setSelectedIndices,
     setSelectedKeys,
-    draw
+    draw,
+    umapEmbedding,
+    onHover,
   ]);
 
   return (
@@ -242,9 +286,9 @@ export function ScatterPlot() {
       ref={canvasRef}
       style={{
         border: '1px solid #ccc',
-        width: 800,
-        height: 600,
-        cursor: isPanning ? 'grabbing' : isDragging || isMovingBrush ? 'crosshair' : 'default'
+        width: canvasWidth,
+        height: canvasHeight,
+        cursor: isPanning ? 'grabbing' : isDragging || isMovingBrush ? 'crosshair' : 'default',
       }}
     />
   );

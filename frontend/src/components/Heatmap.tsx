@@ -58,7 +58,7 @@ export function Heatmap(
       ctx.save();
       ctx.translate(x, y);      
       ctx.rotate(-Math.PI / 2); // Rotate 90° counter-clockwise
-      ctx.fillStyle = label === selectedFeature ? 'blue' : 'black';
+      ctx.fillStyle = 'black';
       ctx.font = label === selectedFeature ? 'bold 13px sans-serif' : '13px sans-serif';
       ctx.fillText(label, -130, 0);
       ctx.restore();

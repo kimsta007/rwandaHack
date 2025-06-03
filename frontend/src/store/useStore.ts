@@ -10,6 +10,8 @@ interface State {
   selectedKeys: string[];
   colorMap: Record<number, string>;
   selectedLevel: string | null;
+  isLoading: boolean;
+  tooltipData: Record<string, string>;
   setSelectedLevel: (l: string | null) => void;
   setEmbedding: (e: number[][]) => void;
   setFeatureMatrix: (f: number[][]) => void;
@@ -18,9 +20,12 @@ interface State {
   setSelectedKeys: (k: string[]) => void;
   setKeys: (k: string[]) => void;
   setSelectedFeature: (f: string) => void;
+  setIsLoading: (loading: boolean) => void;
+  setTooltipData: (data: Record<string, string>) => void;
 }
 
 export const useStore = create<State>((set) => ({
+  isLoading: true,
   umapEmbedding: [],
   featureMatrix: [],
   featureNames: [],
@@ -34,6 +39,8 @@ export const useStore = create<State>((set) => ({
     3: '#4daf4a',
   },
   selectedLevel: null,
+  tooltipData: {},
+  setTooltipData: (data) => set({ tooltipData: data }),
   setSelectedLevel: (l) => set({ selectedLevel: l }),
   setKeys: (k) => set({ keys: k }),
   setSelectedKeys: (k) => set({ selectedKeys: k }),
@@ -42,4 +49,5 @@ export const useStore = create<State>((set) => ({
   setSelectedIndices: (s) => set({ selectedIndices: s }),
   setSelectedFeature: (f) => set({ selectedFeature: f }),
   setFeatureNames: (n) => set({ featureNames: n }),
+  setIsLoading: (loading) => set({ isLoading: loading }),
 }));
