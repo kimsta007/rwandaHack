@@ -7,7 +7,7 @@ import "@mantine/core/styles.css";
 import './App.css'
 
 const PREFIX = import.meta.env.PROD
-  ? import.meta.env.VITE_BASE_PATH
+  ? 'https://dev.codementum.org/rwanda-api'
   : '/';
 
 
@@ -48,7 +48,7 @@ const umap = useCallback(() => {
   }, [umap]);
 
 const handleFeatureClick = async (feature: string) => {
-    const res = await axios.post("http://localhost:8000/recalculate-umap", {
+    const res = await axios.post(`${PREFIX}/recalculate-umap`, {
       filename: "nc_aspire.xlsx",
       selectedFeature: feature,
       n_neighbors: 15,
