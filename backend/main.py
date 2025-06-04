@@ -39,21 +39,36 @@ def run_umap(umap_df, n_neighbors, min_dist, metric):
     )
     return reducer.fit_transform(umap_df).tolist()
 
+def format_item(row):
+    return f"{row.indicator}: {row.reasonWhy} → {row.actionWhat}"
+
 @app.post("/umap")
 def compute_umap(req: UMAPRequest):
     filepath = os.path.join(os.path.dirname(__file__), "data", req.filename)
     df_indicators = pd.read_excel(filepath, sheet_name='Indicators')
+    df_priorities = pd.read_excel(filepath, sheet_name='Priorities')
     excluded_cols = ['organization', 'project', 'familyCode', 'createdAt', 'surveyNumber', 'reds', 'yellows', 'greens']
-    famly_code = df_indicators['familyCode'].tolist()
+
+
+    df_tooltip = (
+        df_priorities
+            .sort_values(['familyCode', 'level'])
+            .groupby('familyCode')
+            .apply(lambda grp: 
+            ' >> '.join(grp.apply(format_item, axis=1))
+        ).reset_index(name='tooltip')
+    )
+    famly_code = df_indicators['familyCode']
     umap_df = df_indicators.drop(columns=excluded_cols)
     df = executor.submit(run_umap, umap_df, req.n_neighbors, req.min_dist, req.metric)
     embedding = df.result()
-
+    
     return {
         "embedding": embedding, 
         "featureMatrix": umap_df.astype(int).values.tolist(),
         "featureNames": umap_df.columns.tolist(),
-        "familyCode": famly_code
+        "familyCode": famly_code.tolist(),
+        "tooltipData": df_tooltip
     }
 
 @app.post("/recalculate-umap")

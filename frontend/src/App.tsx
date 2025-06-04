@@ -7,9 +7,8 @@ import "@mantine/core/styles.css";
 import './App.css'
 
 const PREFIX = import.meta.env.PROD
-  ? 'https://dev.codementum.org/rwanda'
-  : '/';
-
+  ? 'https://dev.codementum.org'
+  : 'http://localhost:8000';
 
 function App() {
 const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFeature, 
@@ -17,7 +16,7 @@ const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFea
 
 const umap = useCallback(() => {
     setIsLoading(true);
-    axios.post(`${PREFIX}umap/`, {
+    axios.post(`${PREFIX}/umap`, {
       filename: "nc_aspire.xlsx",
       n_neighbors: 15,
       min_dist: 0.1,
