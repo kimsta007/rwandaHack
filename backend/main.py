@@ -42,6 +42,10 @@ def run_umap(umap_df, n_neighbors, min_dist, metric):
 def format_item(row):
     return f"{row.indicator}: {row.reasonWhy} → {row.actionWhat}"
 
+@app.get("/")
+def root():
+    return {"message": "Up and running!"}
+
 @app.post("/umap")
 def compute_umap(req: UMAPRequest):
     filepath = os.path.join(os.path.dirname(__file__), "data", req.filename)
