@@ -15,6 +15,7 @@
     "@mantine/notifications": "^8.0.2",
     "@mantine/spotlight": "^8.0.2",
     "@mantinex/dev-icons": "^2.0.0",
+    "@mantinex/mantine-logo": "^2.0.0",
     "axios": "^1.9.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

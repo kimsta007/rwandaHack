@@ -1,9 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 
-export function Heatmap(
-  { onFeatureClick }: { onFeatureClick?: (featureName: string) => void } = {}
-) {
+export function Heatmap({
+  onFeatureClick,
+  onHover,
+}: {
+  onFeatureClick?: (featureName: string) => void;
+  onHover?: (key: string | null) => void;
+} = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { featureMatrix, featureNames, keys, selectedKeys, selectedFeature, setSelectedFeature, colorMap} = useStore();
 
@@ -78,6 +82,28 @@ export function Heatmap(
     }
   }, [featureMatrix, featureNames, keys, selectedKeys, selectedFeature]);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left - labelWidth;
+      const my = e.clientY - rect.top - labelHeight;
+
+      const row = Math.floor(my / cellSize);
+      const col = Math.floor(mx / cellSize);
+
+      const rows = selectedKeys.length > 0 ? selectedKeys.length : featureMatrix.length;
+      const cols = featureNames.length;
+
+      if (row >= 0 && row < rows && col >= 0 && col < cols) {
+        const familyCode = selectedKeys.length > 0 ? selectedKeys[row] : keys[row];
+        onHover?.(familyCode);
+      } else {
+        onHover?.(null);
+      }
+    };
+  
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas || featureNames.length === 0) return;
@@ -118,6 +144,7 @@ export function Heatmap(
     <canvas
       ref={canvasRef}
       onClick={handleClick}
+      onMouseMove={handleMouseMove}
       style={{ marginTop: 16 }}
     />
   );

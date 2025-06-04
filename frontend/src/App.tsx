@@ -1,8 +1,9 @@
 import { useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { AppShell } from './components/AppShell';
+import { MainShell } from './components/MainShell';
 import { useStore } from './store/useStore';
 import { MantineProvider, Center, Loader } from '@mantine/core';
+import "@mantine/core/styles.css";
 import './App.css'
 
 const PREFIX = import.meta.env.PROD
@@ -16,7 +17,7 @@ const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFea
 
 const umap = useCallback(() => {
     setIsLoading(true);
-    axios.post(`${PREFIX}/umap`, {
+    axios.post("http://localhost:8000/umap/", {
       filename: "nc_aspire.xlsx",
       n_neighbors: 15,
       min_dist: 0.1,
@@ -65,7 +66,7 @@ return (
         <Loader size="lg" />
       </Center>
     ) : (
-    <AppShell onFeatureClick={handleFeatureClick}/>)
+    <MainShell onFeatureClick={handleFeatureClick}/>)
     }
   </MantineProvider>
   );
