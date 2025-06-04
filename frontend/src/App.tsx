@@ -7,7 +7,7 @@ import "@mantine/core/styles.css";
 import './App.css'
 
 const PREFIX = import.meta.env.PROD
-  ? 'https://dev.codementum.org'
+  ? 'https://rwandahack.onrender.com'
   : 'http://localhost:8000';
 
 function App() {
