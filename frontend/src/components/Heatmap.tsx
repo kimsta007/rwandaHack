@@ -4,12 +4,15 @@ import { useStore } from '../store/useStore';
 export function Heatmap({
   onFeatureClick,
   onHover,
+  familyCode,
 }: {
   onFeatureClick?: (featureName: string) => void;
   onHover?: (key: string | null) => void;
+  familyCode?: string | null;
 } = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { featureMatrix, featureNames, keys, selectedKeys, selectedFeature, setSelectedFeature, colorMap} = useStore();
+  const { featureMatrix, featureNames, keys, selectedIndices, selectedKeys, selectedFeature, 
+            setSelectedFeature, colorMap, tooltipData} = useStore();
 
   const cellSize = 20;
   const gap = 2;
@@ -22,13 +25,13 @@ export function Heatmap({
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-  const selectedRows = selectedKeys.length > 0
-      ? selectedKeys
-          .map(key => {
-            const index = keys.indexOf(key);
-            return featureMatrix[index];
-          })
-          .filter((row): row is number[] => !!row)
+
+    const selectedRows = selectedIndices.length > 0
+    ? selectedIndices
+        .map(i => featureMatrix[i])
+        .filter((row): row is number[] => !!row)
+    : familyCode
+      ? [featureMatrix[keys.indexOf(familyCode)]]
       : featureMatrix;
 
     const rows = selectedRows.length;
@@ -68,26 +71,86 @@ export function Heatmap({
       ctx.restore();
     }
 
+    // Cater for brushing over a family on the scatter plot
+    const selectedRowKeys = selectedKeys.length > 0 ? selectedKeys : familyCode ? [familyCode] : keys;
+
     // family code labels
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
 
-    for (let i = 0; i < rows; i++) {
-      const label = selectedKeys.length > 0 ? selectedKeys[i] : keys[i];
+    for (let i = 0; i < rows; i++) {;
+      const label = selectedRowKeys[i];
       const x = 105;
       const y = i * cellSize + labelHeight + cellSize / 2;
       ctx.fillStyle = 'black';
       ctx.fillText(label, x, y);
     }
-  }, [featureMatrix, featureNames, keys, selectedKeys, selectedFeature]);
+
+    //Overlay symbols
+    Object.keys(tooltipData.familyCode).forEach((index: string) => {
+      const tooltip = tooltipData.tooltip[Number(index)];
+      const family = tooltipData.familyCode[Number(index)];
+      if (!tooltip || !family) return;
+      tooltip.split('>>').map((text, i) => {
+        const tooltipText = text.split('|');
+        const symbolValue = Number(tooltipText[0]?.trim());
+        const feature = tooltipText[1]?.split(':')[1]?.split('$$')[1]?.trim();
+        
+        const rowIndex = selectedRowKeys.indexOf(family);
+        const colIndex = featureNames.indexOf(feature);
+
+        const row = selectedIndices.length > 0
+          ? featureMatrix[selectedIndices[rowIndex]]
+          : featureMatrix[keys.indexOf(family)];
+
+        if (row && rowIndex !== -1 && colIndex !== -1 && row[colIndex] === symbolValue) {
+          const x = colIndex * cellSize + gap + labelWidth / 2 + cellSize / 2;
+          const y = rowIndex * cellSize + labelHeight + gap / 2 + cellSize / 2;
+
+          ctx.strokeStyle = 'black';
+          ctx.fillStyle = 'black';
+          ctx.lineWidth = 2;
+
+          switch (symbolValue) {
+            case 1: // Circle
+              ctx.beginPath();
+              ctx.arc(x, y, 6, 0, 2 * Math.PI);
+              ctx.stroke();
+              break;
+
+            case 3: // Square
+              ctx.beginPath();
+              ctx.rect(x - 5, y - 5, 10, 10);
+              ctx.stroke();
+              break;
+
+            case 2: // Triangle
+              ctx.beginPath();
+              ctx.moveTo(x, y - 6);
+              ctx.lineTo(x + 6, y + 6);
+              ctx.lineTo(x - 6, y + 6);
+              ctx.closePath();
+              ctx.stroke();
+              break;
+
+            default:
+              ctx.beginPath();
+              ctx.moveTo(x - 6, y);
+              ctx.lineTo(x + 6, y);
+              ctx.stroke();
+          }
+        }
+      });
+    });
+  }, [selectedKeys, selectedFeature, familyCode, selectedIndices]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       
       const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left - labelWidth;
+      const mx = e.clientX - rect.left - labelWidth / 2; 
       const my = e.clientY - rect.top - labelHeight;
 
       const row = Math.floor(my / cellSize);

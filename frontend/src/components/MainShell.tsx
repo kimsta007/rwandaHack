@@ -2,14 +2,17 @@ import { ScatterPlot } from './ScatterPlot';
 import { Heatmap } from './Heatmap';
 import { Legend } from './Legend';
 import { HoverInfo } from './HoverInfo';
+import { GeoMap } from './GeoMap';
 import { useState } from 'react';
 import { AppShell } from '@mantine/core';
-import { Group, Grid, Box } from '@mantine/core';
+import { Group, Grid, Box, ScrollArea } from '@mantine/core';
 
 export function MainShell(
   { onFeatureClick }: { onFeatureClick?: (featureName: string) => void } = {}
 ) {
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const [scatterHoveredKey, setScatterHoveredKey] = useState<string | null>(null);
+  const [heatmapHoveredKey, setHeatmapHoveredKey] = useState<string | null>(null);
+
   return (
  <AppShell
       header={{ height: 60 }}
@@ -28,14 +31,20 @@ export function MainShell(
         </Group>
       </AppShell.Header> 
       
-      <AppShell.Navbar p="md" withBorder style={{ overflow: "scroll" }}>
-          <HoverInfo familyCode={hoveredKey}/>
+      <AppShell.Navbar p="md" withBorder style={{ overflow: 'hidden', height: '100vh' }}>
+        <ScrollArea style={{ height: '100%' }}>
+          <HoverInfo familyCode={heatmapHoveredKey || scatterHoveredKey} />
+        </ScrollArea>
       </AppShell.Navbar>
- 
+
       <AppShell.Main>
         <Grid gutter="md">
+          <Grid.Col span="auto"> 
+            <GeoMap />
+          </Grid.Col>
+
           <Grid.Col span="content"> 
-            <ScatterPlot onHover={setHoveredKey} />
+            <ScatterPlot onHover={setScatterHoveredKey} />
           </Grid.Col>
 
           <Grid.Col span="auto"> 
@@ -44,7 +53,7 @@ export function MainShell(
         </Grid>
 
         <Box mt="md">
-          <Heatmap onFeatureClick={onFeatureClick} onHover={setHoveredKey} />
+          <Heatmap onFeatureClick={onFeatureClick} familyCode={scatterHoveredKey} onHover={setHeatmapHoveredKey} />
         </Box>
       </AppShell.Main>
     </AppShell>

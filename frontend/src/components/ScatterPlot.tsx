@@ -9,6 +9,8 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
     setSelectedKeys,
     selectedIndices,
     selectedKeys,
+    selectedIndicator,
+    setSelectedIndicator,
     keys,
     colorMap,
     featureMatrix,
@@ -31,6 +33,7 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
   const canvasHeight = 600;
   const margin = 40;
 
+  // In future this value should be set through direct manipulation
   const index = featureNames.indexOf('income');
 
   const xExtent = [
@@ -54,13 +57,17 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
+    
     const newSelectedIndices: number[] = [];
     const newSelectedKeys: string[] = [];
 
     umapEmbedding.forEach(([x, y], i) => {
       const cx = scaleX(x);
       const cy = scaleY(y);
+
+      //Brush only selected points
+      const indicator = featureMatrix[i]?.[index];
+      const isActive = selectedIndicator === -1 || indicator === selectedIndicator;
 
       const isInside = brushBox
         ? cx >= Math.min(brushBox[0], brushBox[2]) &&
@@ -69,30 +76,42 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
           cy <= Math.max(brushBox[1], brushBox[3])
         : false;
 
-      if (isInside) {
+      if (isInside && isActive) {
         newSelectedIndices.push(i);
         if (keys[i]) newSelectedKeys.push(keys[i]);
       }
 
       let color = '#bdbdbd';
+      let opacity = 1;
       if (index !== -1 && featureMatrix[i]) {
         const val = featureMatrix[i][index];
-        color = colorMap[val] || '#999999';
+        color = colorMap[val] || color;
+        if (selectedIndicator !== -1) {
+          opacity = (val !== selectedIndicator) ? 0.2 : 1;
+        }
       }
 
       ctx.fillStyle = color;
+      ctx.globalAlpha = opacity;
       ctx.beginPath();
       ctx.arc(cx, cy, 3.5, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.globalAlpha = 1;
     });
 
-    if (
-      JSON.stringify(newSelectedIndices) !== JSON.stringify(selectedIndices) ||
-      JSON.stringify(newSelectedKeys) !== JSON.stringify(selectedKeys)
-    ) {
-      setSelectedIndices(newSelectedIndices);
-      setSelectedKeys(newSelectedKeys);
-    }
+    const arraysEqual = (a: any[], b: any[]) =>
+     a.length === b.length && a.every((k, v) => k === b[v]);
+
+    //compare brushed with current
+    if (brushBox){
+      //prevent unecessary updating 
+      if (
+        !arraysEqual(newSelectedIndices, selectedIndices) ||
+        !arraysEqual(newSelectedKeys, selectedKeys)
+      ) {
+        setSelectedIndices(newSelectedIndices);
+        setSelectedKeys(newSelectedKeys);
+      }}
 
     if (brushBox) {
       const [x1, y1, x2, y2] = brushBox;
@@ -112,6 +131,7 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
     featureMatrix,
     featureNames,
     colorMap,
+    selectedIndicator,
   ]);
 
   useEffect(() => {
@@ -183,9 +203,21 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
         const cx = scaleX(x);
         const cy = scaleY(y);
         const dist = Math.hypot(mx - cx, my - cy);
-        if (dist < 6) foundKey = keys[i];
+       
+        const indicator = featureMatrix[i]?.[index];
+        const isActive = selectedIndicator === -1 || indicator === selectedIndicator;
+
+        if (dist < 6 && isActive) {
+          foundKey = keys[i];
+        }
       });
-      onHover?.(foundKey);
+      
+      if (canvas)
+        canvas.style.cursor = foundKey ? 'default' : 'crosshair';
+
+      if (!isMovingBrush){
+        onHover?.(foundKey);
+      }
     };
 
     const handleMouseUp = () => {
@@ -239,6 +271,7 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
         setBrushBox(null);
         setSelectedKeys([]);
         setSelectedIndices([]);
+        setSelectedIndicator(-1);
         draw();
       } else if (e.key === 'r' || e.key === 'R') {
         setScale(1);

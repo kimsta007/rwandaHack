@@ -17,12 +17,15 @@
     "@mantinex/dev-icons": "^2.0.0",
     "@mantinex/mantine-logo": "^2.0.0",
     "axios": "^1.9.0",
+    "leaflet": "^1.9.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/leaflet": "^1.9.18",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

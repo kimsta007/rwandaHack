@@ -5,14 +5,15 @@ interface State {
   featureMatrix: number[][];
   featureNames: string[];
   selectedIndices: number[];
+  selectedIndicator: number;
   selectedFeature: string;
   keys: string[];
   selectedKeys: string[];
   colorMap: Record<number, string>;
-  selectedLevel: string | null;
+  legendItems: { label: string; color: string; value: number }[];
   isLoading: boolean;
   tooltipData: Record<string, string>;
-  setSelectedLevel: (l: string | null) => void;
+  setSelectedIndicator: (i: number) => void;
   setEmbedding: (e: number[][]) => void;
   setFeatureMatrix: (f: number[][]) => void;
   setSelectedIndices: (s: number[]) => void;
@@ -38,10 +39,16 @@ export const useStore = create<State>((set) => ({
     2: '#dbdb1d',
     3: '#4daf4a',
   },
-  selectedLevel: null,
+  legendItems: [
+    { label: 'Not recorded', color: '#bdbdbd', value: 0 },
+    { label: 'Good', color: '#4daf4a', value: 3 },
+    { label: 'Needs Improvement', color: '#dbdb1d', value: 2 },
+    { label: 'Bad', color: '#984ea3', value: 1 },
+  ],
   tooltipData: {},
+  selectedIndicator: -1,
+  setSelectedIndicator: (i) => set({ selectedIndicator: i }),
   setTooltipData: (data) => set({ tooltipData: data }),
-  setSelectedLevel: (l) => set({ selectedLevel: l }),
   setKeys: (k) => set({ keys: k }),
   setSelectedKeys: (k) => set({ selectedKeys: k }),
   setEmbedding: (e) => set({ umapEmbedding: e }),

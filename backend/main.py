@@ -6,6 +6,7 @@ import umap
 import numba
 from concurrent.futures import ThreadPoolExecutor
 from fastapi.middleware.cors import CORSMiddleware
+import re
 import os
 
 numba.config.THREADING_LAYER = "workqueue"
@@ -28,6 +29,12 @@ class UMAPRequest(BaseModel):
     metric: str = "euclidean"
     selectedFeature: Optional[str] = None
 
+def to_camel_case(text: str) -> str:
+    words = re.split(r'\s+', text.strip().lower())
+    if not words:
+        return ''
+    return words[0] + ''.join(word.capitalize() for word in words[1:])
+
 def run_umap(umap_df, n_neighbors, min_dist, metric):
     reducer = umap.UMAP(
         n_neighbors=n_neighbors,
@@ -40,7 +47,7 @@ def run_umap(umap_df, n_neighbors, min_dist, metric):
     return reducer.fit_transform(umap_df).tolist()
 
 def format_item(row):
-    return f"{row.indicator}: {row.reasonWhy} → {row.actionWhat}"
+    return f"{row.level} | {row.indicator}: {row.reasonWhy} → {row.actionWhat} $$ {to_camel_case(row.indicator)}"
 
 @app.get("/")
 def root():
