@@ -52,7 +52,7 @@ export function GeoMap() {
       [36.0726, -79.7920], // Greensboro
     ];
 
-    points.forEach(([lat, lng], i) => {
+    points.forEach(([lat, lng]) => {
       L.circleMarker([lat, lng], {
         radius: 2,        
         color: '#000000',

@@ -92,7 +92,7 @@ export function Heatmap({
       const tooltip = tooltipData.tooltip[Number(index)];
       const family = tooltipData.familyCode[Number(index)];
       if (!tooltip || !family) return;
-      tooltip.split('>>').map((text, i) => {
+      tooltip.split('>>').map((text) => {
         const tooltipText = text.split('|');
         const symbolValue = Number(tooltipText[0]?.trim());
         const feature = tooltipText[1]?.split(':')[1]?.split('$$')[1]?.trim();
