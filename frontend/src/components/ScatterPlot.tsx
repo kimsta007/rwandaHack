@@ -29,8 +29,8 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
   const [isMovingBrush, setIsMovingBrush] = useState(false);
   const [moveStart, setMoveStart] = useState<[number, number] | null>(null);
 
-  const canvasWidth = 800;
-  const canvasHeight = 600;
+  const canvasWidth = 600;
+  const canvasHeight = 450;
   const margin = 40;
 
   // In future this value should be set through direct manipulation
@@ -254,13 +254,11 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
       const direction = e.deltaY < 0 ? 1 : -1;
       const newScale = Math.max(1, Math.min(5, scale * (direction > 0 ? zoomFactor : 1 / zoomFactor)));
 
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      const dx = mx - offset[0];
-      const dy = my - offset[1];
-
+      // Zoom to center
+      const cx = canvasWidth / 2;
+      const cy = canvasHeight / 2;
+      const dx = cx - offset[0];
+      const dy = cy - offset[1];
       setOffset([offset[0] - dx * (newScale / scale - 1), offset[1] - dy * (newScale / scale - 1)]);
       setScale(newScale);
       draw();

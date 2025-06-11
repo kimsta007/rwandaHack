@@ -12,39 +12,44 @@ export function GeoMap() {
   );
 
   useEffect(() => {
-    // Initialize the map centered on NC
-    if (!mapContainerRef.current) return undefined;
-    const map = (mapRef.current = L.map(mapContainerRef.current, {
+    if (mapRef.current || !mapContainerRef.current) return;
+
+    const map = L.map(mapContainerRef.current, {
       center: [35.7596, -79.0193], 
       zoom: 6,
-      maxBounds: ncBounds, // Restrict panning to NC
-      minZoom: 6,         // Prevent zooming out too far
-      maxZoom: 12         // Prevent zooming in too much
-    }));
+      maxBounds: ncBounds,
+      minZoom: 6,
+      maxZoom: 12
+    });
+
+    mapRef.current = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
-    // Enforce bounds if user tries to pan outside
+    // Enforce bounds
     map.on('drag', () => {
       if (!ncBounds.contains(map.getCenter())) {
         map.panInsideBounds(ncBounds, { animate: true });
       }
     });
 
-  fetch('../../data/nc.geojson')
-    .then(res => res.json())
-    .then((data: GeoJSON.Feature) => {
-      L.geoJSON(data, {
-        style: {
-          color: 'blue',
-          weight: 2,
-          fillOpacity: 0
-        }
-      }).addTo(map);
-    });
-
+    // Load GeoJSON
+    fetch('../../data/nc.geojson')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load GeoJSON');
+        return res.json();
+      })
+      .then((data: GeoJSON.Feature) => {
+        L.geoJSON(data, {
+          style: {
+            color: 'black',
+            weight: 2,
+            fillOpacity: 0
+          }
+        }).addTo(map);
+      })
 
     const points = [
       [35.7796, -78.6382], // Raleigh
@@ -54,26 +59,26 @@ export function GeoMap() {
 
     points.forEach(([lat, lng]) => {
       L.circleMarker([lat, lng], {
-        radius: 2,        
-        color: '#000000',
-        fillColor: '#000000',
-        fillOpacity: 0.8
-      })
-        .addTo(map)
+        radius: 5,        
+        color: 'white',
+        fillColor: 'blue', 
+        fillOpacity: 0.8,
+        weight: 2
+      }).addTo(map);
     });
 
-
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      mapRef.current?.remove();
+      mapRef.current = null;
     };
   }, []);
 
   return (
-    <div style={{ position: 'relative', width: '600px', height: '600px' }}>
-      <div ref={mapContainerRef} style={{ width: '600px', height: '600px'}} />
+    <div style={{ position: 'relative', width: '600px', height: '510px' }}>
+      <div 
+        ref={mapContainerRef} 
+        style={{ width: '100%', height: '100%' }}
+      />
     </div>
   );
-};
+}

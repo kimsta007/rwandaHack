@@ -16,6 +16,7 @@
     "@mantine/spotlight": "^8.0.2",
     "@mantinex/dev-icons": "^2.0.0",
     "@mantinex/mantine-logo": "^2.0.0",
+    "@tabler/icons-react": "^3.34.0",
     "axios": "^1.9.0",
     "leaflet": "^1.9.4",
     "react": "^19.1.0",

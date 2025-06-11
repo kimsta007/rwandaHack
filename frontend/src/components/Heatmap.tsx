@@ -1,6 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 
+const featureGroups = [
+  { name: 'Income & Employment', features: ['income', 'savings', 'credit', 'bankServices', 'debt', 'employabilityReadiness',
+    'stableIncome', 'identification']},
+  { name: 'Health & Environment', features: ['environment', 'garbage', 'water', 'healthServices', 'mentalHealthServices', 'nutritiousDiet',
+    'foodAccess', 'physicalActivity', 'addiction', 'householdViolence', 'hygiene', 'sexualHealth', 'healthyTeeth', 'healthyVision',
+  'vaccines', 'insurance']},  
+  { name: 'Housing & Infrastructure', features: ['stableHousing', 'safeHouse', 'enoughSpace', 'kitchen', 'bathroom', 'appliances',
+    'phone', 'clothing', 'safety', 'secutityOfProperty', 'electricity', 'transportation']},
+  { name: 'Education and Culture', features: ['schooling', 'literacy', 'incarceration', 'generateIncome', 'internet', 'entertainment',
+    'discrimination', 'community']},
+  { name: 'O & P', features: ['closeRelationships', 'civicEngagement', 'resolveProblems'] },
+  { name: 'Interiority & Motivation', features: ['selfEfficacy', 'selfConfidence', 'emotionalWellBeing', 'emotionalIntelligence',
+    'spiritualWellBeing', 'agency', 'continuousLearning']},
+];
+
 export function Heatmap({
   onFeatureClick,
   onHover,
@@ -16,8 +31,9 @@ export function Heatmap({
 
   const cellSize = 20;
   const gap = 2;
-  const labelHeight = 130;
-  const labelWidth = 210;
+  const labelHeight = 180;
+  const labelWidth = 400;
+  const groupLabelHeight = 30;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -60,15 +76,67 @@ export function Heatmap({
     for (let j = 0; j < cols; j++) {
       const label = featureNames[j];
       const x = j * cellSize + cellSize + (labelWidth - 20) / 2;
-      const y = 0;
+      const y = -35;
       
       ctx.save();
       ctx.translate(x, y);      
       ctx.rotate(-Math.PI / 2); // Rotate 90° counter-clockwise
       ctx.fillStyle = 'black';
-      ctx.font = label === selectedFeature ? 'bold 13px sans-serif' : '13px sans-serif';
-      ctx.fillText(label, -130, 0);
+      ctx.font = '13px sans-serif';
+      ctx.fillText(label, -labelHeight, 0);
+
+      //Strike text if selected
+      if (label === selectedFeature) {
+        const textWidth = ctx.measureText(label).width;
+        const offsetX = -labelHeight; 
+        const offsetY = 25;    
+
+        ctx.beginPath();
+        ctx.moveTo(offsetX, offsetY - 25);
+        ctx.lineTo(offsetX + textWidth, offsetY - 25);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+      }
       ctx.restore();
+    }
+
+    // Draw group labels and boxes
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'black';
+
+    for (const group of featureGroups) {
+      // Find the indices of features in this group
+      const groupFeatureIndices = group.features
+        .map(f => featureNames.indexOf(f))
+        .filter(i => i !== -1);
+      
+      if (groupFeatureIndices.length === 0) continue;
+
+      const firstCol = Math.min(...groupFeatureIndices);
+      const lastCol = Math.max(...groupFeatureIndices);
+      
+      const groupWidth = (lastCol - firstCol + 1) * cellSize;
+      const groupX = firstCol * cellSize + labelWidth / 2;
+      
+      // Draw group box
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(
+        groupX,
+        labelHeight - groupLabelHeight,
+        groupWidth,
+        groupLabelHeight - 5
+      );
+      
+      // Draw group name
+      ctx.fillText(
+        group.name,
+        groupX + groupWidth / 2,
+        labelHeight - groupLabelHeight + 5
+      );
     }
 
     // Cater for brushing over a family on the scatter plot
@@ -81,22 +149,22 @@ export function Heatmap({
 
     for (let i = 0; i < rows; i++) {;
       const label = selectedRowKeys[i];
-      const x = 105;
+      const x = labelWidth / 2;
       const y = i * cellSize + labelHeight + cellSize / 2;
       ctx.fillStyle = 'black';
       ctx.fillText(label, x, y);
     }
-
+    
     //Overlay symbols
     Object.keys(tooltipData.familyCode).forEach((index: string) => {
       const tooltip = tooltipData.tooltip[Number(index)];
       const family = tooltipData.familyCode[Number(index)];
+  
       if (!tooltip || !family) return;
       tooltip.split('>>').map((text) => {
         const tooltipText = text.split('|');
         const symbolValue = Number(tooltipText[0]?.trim());
         const feature = tooltipText[1]?.split(':')[1]?.split('$$')[1]?.trim();
-        
         const rowIndex = selectedRowKeys.indexOf(family);
         const colIndex = featureNames.indexOf(feature);
 
@@ -104,10 +172,10 @@ export function Heatmap({
           ? featureMatrix[selectedIndices[rowIndex]]
           : featureMatrix[keys.indexOf(family)];
 
-        if (row && rowIndex !== -1 && colIndex !== -1 && row[colIndex] === symbolValue) {
+        if (row && rowIndex !== -1 && colIndex !== -1) {
           const x = colIndex * cellSize + gap + labelWidth / 2 + cellSize / 2;
           const y = rowIndex * cellSize + labelHeight + gap / 2 + cellSize / 2;
-
+        
           ctx.strokeStyle = 'black';
           ctx.fillStyle = 'black';
           ctx.lineWidth = 2;
@@ -175,9 +243,11 @@ export function Heatmap({
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    const adjustedClickX: number = clickX - 105; // Adjust for label width
+    const adjustedClickX: number = clickX - labelWidth / 2; // Adjust for label width
+    const adjustedClickY: number = clickY - 40;
+
     // Check if click is within label area
-    if (clickY > labelHeight) return;
+    if (clickY > labelHeight - 40) return;
 
     for (let j = 0; j < featureNames.length; j++) {
       const x = j * cellSize + cellSize / 2;
@@ -192,8 +262,8 @@ export function Heatmap({
       if (
         adjustedClickX >= rotatedBox.x &&
         adjustedClickX <= rotatedBox.x + rotatedBox.width &&
-        clickY >= rotatedBox.y &&
-        clickY <= rotatedBox.y + rotatedBox.height
+        adjustedClickY >= rotatedBox.y &&
+        adjustedClickY <= rotatedBox.y + rotatedBox.height
       ) {
         const featureName = featureNames[j];
         if (onFeatureClick) onFeatureClick(featureName);
