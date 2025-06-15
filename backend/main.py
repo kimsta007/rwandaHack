@@ -13,7 +13,7 @@ numba.config.THREADING_LAYER = "workqueue"
 numba.set_num_threads(1)
 
 app = FastAPI()
-executor = ThreadPoolExecutor(max_workers=1)  
+executor = ThreadPoolExecutor(max_workers=1)
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,50 +51,54 @@ def format_item(row):
 
 @app.get("/")
 def root():
-    return {"message": "Up and running!"}
+    return {"Message": "Up and Running!"}
 
 @app.post("/umap")
 def compute_umap(req: UMAPRequest):
     filepath = os.path.join(os.path.dirname(__file__), "data", req.filename)
     df_indicators = pd.read_excel(filepath, sheet_name='Indicators')
+    df_indicators['surveyNumber'] = df_indicators['surveyNumber'].str.replace('º', '', regex=False)
     df_priorities = pd.read_excel(filepath, sheet_name='Priorities')
+    df_priorities['surveyNumber'] = df_priorities['surveyNumber'].str.replace('º', '', regex=False)
+    
     excluded_cols = ['organization', 'project', 'familyCode', 'createdAt', 'surveyNumber', 'reds', 'yellows', 'greens']
-
 
     df_tooltip = (
         df_priorities
             .sort_values(['familyCode', 'level'])
-            .groupby('familyCode')
+            .groupby(['familyCode', 'surveyNumber'])
             .apply(lambda grp: 
-            ' >> '.join(grp.apply(format_item, axis=1))
-        ).reset_index(name='tooltip')
+                ' >> '.join(grp.apply(format_item, axis=1))
+            ).reset_index(name='tooltip')
     )
-    famly_code = df_indicators['familyCode']
+
     umap_df = df_indicators.drop(columns=excluded_cols)
     df = executor.submit(run_umap, umap_df, req.n_neighbors, req.min_dist, req.metric)
     embedding = df.result()
-    
+
+    # Merge indicators and tooltips
+    merged_df = df_indicators[['familyCode', 'surveyNumber']].copy()
+    merged_df['features'] = umap_df.to_dict(orient='records')
+    merged_df['embedding'] = embedding
+    df_tooltip = pd.DataFrame({
+      'familyCode': df_tooltip.familyCode,
+      'surveyNumber': df_tooltip.surveyNumber,
+      'tooltip': df_tooltip.tooltip
+    })
+    merged_df = merged_df.merge(df_tooltip, on=['familyCode', 'surveyNumber'], how='left')
+    merged_df['tooltip'] = merged_df['tooltip'].fillna('')
+
+    data = []
+    for _, row in merged_df.iterrows():
+        data.append({
+            'familyCode': row['familyCode'],
+            'surveyNumber': row['surveyNumber'],
+            'features': row['features'],
+            'embedding': row['embedding'],
+            'tooltip': row['tooltip'] or ''
+        })
+
     return {
-        "embedding": embedding, 
-        "featureMatrix": umap_df.astype(int).values.tolist(),
-        "featureNames": umap_df.columns.tolist(),
-        "familyCode": famly_code.tolist(),
-        "tooltipData": df_tooltip
+        "featureNames": list(umap_df.columns),
+        "data": data
     }
-
-@app.post("/recalculate-umap")
-def recalculate_umap(req: UMAPRequest):
-    filepath = os.path.join(os.path.dirname(__file__), "data", req.filename)
-    df_indicators = pd.read_excel(filepath, sheet_name='Indicators')
-
-    excluded_cols = ['organization', 'project', 'familyCode', 'createdAt', 'surveyNumber', 'reds', 'yellows', 'greens']
-    umap_df = df_indicators.drop(columns=excluded_cols)
-
-    # Remove deselected feature
-    if req.selectedFeature and req.selectedFeature in umap_df.columns:
-        umap_df = umap_df.drop(columns=[req.selectedFeature])
-
-    df = executor.submit(run_umap, umap_df, req.n_neighbors, req.min_dist, req.metric)
-    embedding = df.result()
-
-    return {"embedding": embedding}

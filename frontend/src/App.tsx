@@ -4,34 +4,26 @@ import { MainShell } from './components/MainShell';
 import { useStore } from './store/useStore';
 import { MantineProvider, Center, Loader } from '@mantine/core';
 import "@mantine/core/styles.css";
-import './App.css'
-
-const PREFIX = import.meta.env.PROD
-  ? 'https://rwandahack.onrender.com'
-  : 'http://localhost:8000';
+import './App.css';
 
 function App() {
-const { setEmbedding, setFeatureMatrix, setFeatureNames, setKeys, setSelectedFeature, 
-                                      setTooltipData, setIsLoading, isLoading } = useStore();
+  const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading } = useStore();
 
-const umap = useCallback(() => {
+  const umap = useCallback(() => {
     setIsLoading(true);
-    axios.post(`${PREFIX}/umap`, {
+    axios.post("http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
       n_neighbors: 15,
       min_dist: 0.1,
       metric: "euclidean"
     }).then(res => {
-      setEmbedding(res.data.embedding);
-      setFeatureMatrix(res.data.featureMatrix);
-      setFeatureNames(res.data.featureNames);
-      setKeys(res.data.familyCode);
-      setTooltipData(res.data.tooltipData);
-      setSelectedFeature('');
+      setData(res.data.data);                  // unified data array
+      setFeatureNames(res.data.featureNames);  // feature names
+      setSelectedFeature('');                  // reset feature selection
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [setEmbedding, setFeatureMatrix, setSelectedFeature, setFeatureNames, setKeys]);
+  }, [setData, setFeatureNames, setSelectedFeature]);
 
   useEffect(() => {
     umap();
@@ -46,8 +38,8 @@ const umap = useCallback(() => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [umap]);
 
-const handleFeatureClick = async (feature: string) => {
-    const res = await axios.post(`${PREFIX}/recalculate-umap`, {
+  const handleFeatureClick = async (feature: string) => {
+    const res = await axios.post("$http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
       selectedFeature: feature,
       n_neighbors: 15,
@@ -55,19 +47,25 @@ const handleFeatureClick = async (feature: string) => {
       metric: "euclidean"
     });
 
-    setEmbedding(res.data.embedding);
+    // Only embedding changes on recalculation
+    useStore.setState((state) => ({
+      data: state.data.map((item, index) => ({
+        ...item,
+        embedding: res.data.embedding[index]
+      }))
+    }));
   };
 
-return (
-  <MantineProvider theme={{}}>
-    {isLoading ? (
-      <Center style={{ height: '100%' }}>
-        <Loader size="lg" />
-      </Center>
-    ) : (
-    <MainShell onFeatureClick={handleFeatureClick}/>)
-    }
-  </MantineProvider>
+  return (
+    <MantineProvider theme={{}}>
+      {isLoading ? (
+        <Center style={{ height: '100%' }}>
+          <Loader size="lg" />
+        </Center>
+      ) : (
+        <MainShell onFeatureClick={handleFeatureClick} />
+      )}
+    </MantineProvider>
   );
 }
 

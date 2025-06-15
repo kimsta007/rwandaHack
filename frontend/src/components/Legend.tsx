@@ -2,11 +2,18 @@ import { useStore } from '../store/useStore';
 import { useEffect } from 'react';
 
 export function Legend() {
-  const { legendItems, selectedIndicator, setSelectedIndicator, featureMatrix, keys, 
-                        setSelectedIndices, setSelectedKeys, featureNames } = useStore();
-                        
-  const index = featureNames.indexOf('income');
-  
+  const {
+    legendItems,
+    selectedIndicator,
+    setSelectedIndicator,
+    data,
+    setSelectedIndices,
+    setSelectedKeys
+  } = useStore();
+
+  // Hardcoded for now — you can replace this with selectedFeature if needed
+  const targetFeature = 'income';
+
   const handleClick = (indicator: number) => {
     setSelectedIndicator(selectedIndicator === indicator ? -1 : indicator);
   };
@@ -14,22 +21,26 @@ export function Legend() {
   useEffect(() => {
     if (selectedIndicator !== -1) {
       const newSelectedIndices: number[] = [];
-      const newSelectedKeys: string[] = [];
+      const newSelectedKeys: { familyCode: string; surveyNumber: string }[] = [];
 
-      featureMatrix.forEach((row, i) => {
-        const val = row[index];
+      data.forEach((row, i) => {
+        const val = row.features[targetFeature];
         if (val === selectedIndicator) {
           newSelectedIndices.push(i);
-          if (keys[i]) newSelectedKeys.push(keys[i]);
+          newSelectedKeys.push({
+            familyCode: row.familyCode,
+            surveyNumber: row.surveyNumber
+          });
         }
       });
+
       setSelectedIndices(newSelectedIndices);
       setSelectedKeys(newSelectedKeys);
     } else {
       setSelectedIndices([]);
       setSelectedKeys([]);
     }
-  }, [selectedIndicator]);
+  }, [selectedIndicator, data, targetFeature, setSelectedIndices, setSelectedKeys]);
 
   return (
     <div>

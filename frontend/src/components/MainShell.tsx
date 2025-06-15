@@ -11,8 +11,8 @@ import { useDisclosure } from '@mantine/hooks';
 export function MainShell(
   { onFeatureClick }: { onFeatureClick?: (featureName: string) => void } = {}
 ) {
-  const [scatterHoveredKey, setScatterHoveredKey] = useState<string | null>(null);
-  const [heatmapHoveredKey, setHeatmapHoveredKey] = useState<string | null>(null);
+  const [scatterHovered, setScatterHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
+  const [heatmapHovered, setHeatmapHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
   const [searchValue, setSearchValue] = useState('');
 
@@ -57,7 +57,8 @@ export function MainShell(
       
       <AppShell.Navbar p="md" withBorder style={{ overflow: 'hidden', height: '100vh' }}>
         <ScrollArea style={{ height: '100%' }}>
-          <HoverInfo familyCode={heatmapHoveredKey || scatterHoveredKey} />
+            <HoverInfo familyCode={(heatmapHovered ?? scatterHovered)?.familyCode ?? null}
+                    surveyNumber={(heatmapHovered ?? scatterHovered)?.surveyNumber ?? null} />
         </ScrollArea>
         <Drawer opened={opened} onClose={close}
           transitionProps={{ transition: 'rotate-left', duration: 150, timingFunction: 'linear' }}
@@ -72,16 +73,30 @@ export function MainShell(
           <Grid.Col span={4}>
             <Stack gap="md"> 
               <Legend />
-              <ScatterPlot onHover={setScatterHoveredKey} />
+              <ScatterPlot 
+                onHover={(key) => {
+                  setScatterHovered(key);
+                  setHeatmapHovered(null);  
+                }} 
+                searchValue={searchValue}
+              />
               <GeoMap />
             </Stack>
           </Grid.Col>
 
           <Grid.Col span={8}>
-            <Heatmap onFeatureClick={onFeatureClick} familyCode={scatterHoveredKey} onHover={setHeatmapHoveredKey} />
+            <Heatmap 
+              onFeatureClick={onFeatureClick} 
+              family={scatterHovered} 
+              onHover={(key) => {
+                setHeatmapHovered(key);
+                setScatterHovered(null);  
+              }} 
+              searchValue={searchValue}
+            />
           </Grid.Col>
         </Grid>
       </AppShell.Main>
     </AppShell>
-  );
+);
 }

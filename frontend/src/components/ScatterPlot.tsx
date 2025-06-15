@@ -1,48 +1,46 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 
-export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => void }) {
+export function ScatterPlot({ onHover, searchValue }: { 
+  onHover?: (key: { familyCode: string; surveyNumber: string } | null) => void; 
+  searchValue: string; 
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
-    umapEmbedding,
-    setSelectedIndices,
-    setSelectedKeys,
+    data,
+    featureNames,
+    selectedIndicator,
     selectedIndices,
     selectedKeys,
-    selectedIndicator,
-    setSelectedIndicator,
-    keys,
+    setSelectedIndices,
+    setSelectedKeys,
+    setBrushBox,
+    brushBox,
     colorMap,
-    featureMatrix,
-    featureNames,
   } = useStore();
 
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<[number, number]>([0, 0]);
-
   const [isDragging, setIsDragging] = useState(false);
+  const [isMovingBrush, setIsMovingBrush] = useState(false);
+  const [moveStart, setMoveStart] = useState<[number, number] | null>(null);
   const [start, setStart] = useState<[number, number] | null>(null);
   const [end, setEnd] = useState<[number, number] | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [lastPan, setLastPan] = useState<[number, number] | null>(null);
-  const [brushBox, setBrushBox] = useState<[number, number, number, number] | null>(null);
-  const [isMovingBrush, setIsMovingBrush] = useState(false);
-  const [moveStart, setMoveStart] = useState<[number, number] | null>(null);
 
   const canvasWidth = 600;
   const canvasHeight = 450;
   const margin = 40;
-
-  // In future this value should be set through direct manipulation
   const index = featureNames.indexOf('income');
 
   const xExtent = [
-    Math.min(...umapEmbedding.map(d => d[0])) - 0.1,
-    Math.max(...umapEmbedding.map(d => d[0])) + 0.1,
+    Math.min(...data.map((d) => d.embedding[0])) - 0.1,
+    Math.max(...data.map((d) => d.embedding[0])) + 0.1,
   ];
   const yExtent = [
-    Math.min(...umapEmbedding.map(d => d[1])) - 0.1,
-    Math.max(...umapEmbedding.map(d => d[1])) + 0.1,
+    Math.min(...data.map((d) => d.embedding[1])) - 0.1,
+    Math.max(...data.map((d) => d.embedding[1])) + 0.1,
   ];
 
   const scaleX = (x: number) =>
@@ -50,46 +48,46 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
   const scaleY = (y: number) =>
     canvasHeight - (((y - yExtent[0]) / (yExtent[1] - yExtent[0])) * (canvasHeight - 2 * margin) * scale + offset[1] + margin);
 
+  const inverseScale = (px: number, py: number): [number, number] => {
+    const x = ((px - margin - offset[0]) / ((canvasWidth - 2 * margin) * scale)) * (xExtent[1] - xExtent[0]) + xExtent[0];
+    const y = ((canvasHeight - py - margin - offset[1]) / ((canvasHeight - 2 * margin) * scale)) * (yExtent[1] - yExtent[0]) + yExtent[0];
+    return [x, y];
+  };
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || umapEmbedding.length === 0) return;
+    if (!canvas || data.length === 0) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    const newSelectedIndices: number[] = [];
-    const newSelectedKeys: string[] = [];
 
-    umapEmbedding.forEach(([x, y], i) => {
+    const newSelectedIndices: number[] = [];
+    const newSelectedKeys: { familyCode: string; surveyNumber: string }[] = [];
+
+    data.forEach((row, i) => {
+      const tooltipMatches = !searchValue || row.tooltip.toLowerCase().includes(searchValue.toLowerCase());
+        if (!tooltipMatches) return;
+      const [x, y] = row.embedding;
       const cx = scaleX(x);
       const cy = scaleY(y);
+      const val = row.features['income'];
+      const indicatorMatch = selectedIndicator === -1 || val === selectedIndicator;
 
-      //Brush only selected points
-      const indicator = featureMatrix[i]?.[index];
-      const isActive = selectedIndicator === -1 || indicator === selectedIndicator;
+      let inBrush = true;
+      if (brushBox) {
+        const [bx1, by1, bx2, by2] = brushBox;
+        inBrush = x >= Math.min(bx1, bx2) && x <= Math.max(bx1, bx2)
+               && y >= Math.min(by1, by2) && y <= Math.max(by1, by2);
+      }
 
-      const isInside = brushBox
-        ? cx >= Math.min(brushBox[0], brushBox[2]) &&
-          cx <= Math.max(brushBox[0], brushBox[2]) &&
-          cy >= Math.min(brushBox[1], brushBox[3]) &&
-          cy <= Math.max(brushBox[1], brushBox[3])
-        : false;
-
-      if (isInside && isActive) {
+      if (indicatorMatch && inBrush) {
         newSelectedIndices.push(i);
-        if (keys[i]) newSelectedKeys.push(keys[i]);
+        newSelectedKeys.push({ familyCode: row.familyCode, surveyNumber: row.surveyNumber });
       }
 
-      let color = '#bdbdbd';
-      let opacity = 1;
-      if (index !== -1 && featureMatrix[i]) {
-        const val = featureMatrix[i][index];
-        color = colorMap[val] || color;
-        if (selectedIndicator !== -1) {
-          opacity = (val !== selectedIndicator) ? 0.2 : 1;
-        }
-      }
+      let color = colorMap[val] || '#bdbdbd';
+      let opacity = indicatorMatch ? 1 : 0.2;
 
       ctx.fillStyle = color;
       ctx.globalAlpha = opacity;
@@ -99,177 +97,143 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
       ctx.globalAlpha = 1;
     });
 
-    const arraysEqual = (a: any[], b: any[]) =>
-     a.length === b.length && a.every((k, v) => k === b[v]);
-
-    //compare brushed with current
-    if (brushBox){
-      //prevent unecessary updating 
-      if (
-        !arraysEqual(newSelectedIndices, selectedIndices) ||
-        !arraysEqual(newSelectedKeys, selectedKeys)
-      ) {
-        setSelectedIndices(newSelectedIndices);
-        setSelectedKeys(newSelectedKeys);
-      }}
+    if (
+      JSON.stringify(newSelectedIndices) !== JSON.stringify(selectedIndices)
+    ) {
+      setSelectedIndices(newSelectedIndices);
+      setSelectedKeys(newSelectedKeys);
+    }
 
     if (brushBox) {
       const [x1, y1, x2, y2] = brushBox;
+      const px1 = scaleX(x1);
+      const py1 = scaleY(y1);
+      const px2 = scaleX(x2);
+      const py2 = scaleY(y2);
       ctx.strokeStyle = 'black';
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(Math.min(px1, px2), Math.min(py1, py2), Math.abs(px2 - px1), Math.abs(py2 - py1));
     }
-  }, [
-    umapEmbedding,
-    scale,
-    offset,
-    brushBox,
-    keys,
-    selectedIndices,
-    selectedKeys,
-    setSelectedIndices,
-    setSelectedKeys,
-    featureMatrix,
-    featureNames,
-    colorMap,
-    selectedIndicator,
-  ]);
+  }, [data, featureNames, brushBox, selectedIndicator, scale, offset, colorMap, selectedIndices, selectedKeys, searchValue]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     draw();
   }, [draw]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const handleMouseDown = (e: MouseEvent) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const [lx, ly] = inverseScale(mx, my);
 
-    const handleMouseDown = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      if (e.shiftKey) {
-        setIsPanning(true);
-        setLastPan([e.clientX, e.clientY]);
-      } else if (
-        brushBox &&
-        mx >= brushBox[0] &&
-        mx <= brushBox[2] &&
-        my >= brushBox[1] &&
-        my <= brushBox[3]
-      ) {
+    if (e.shiftKey) {
+      setIsPanning(true);
+      setLastPan([e.clientX, e.clientY]);
+    } else if (brushBox) {
+      const [x1, y1, x2, y2] = brushBox;
+      const inside = lx >= Math.min(x1, x2) && lx <= Math.max(x1, x2) && ly >= Math.min(y1, y2) && ly <= Math.max(y1, y2);
+      if (inside) {
         setIsMovingBrush(true);
-        setMoveStart([mx, my]);
+        setMoveStart([lx, ly]);
       } else {
         setIsDragging(true);
-        setStart([mx, my]);
+        setStart([lx, ly]);
         setEnd(null);
       }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      if (isPanning && lastPan) {
-        const dx = e.clientX - lastPan[0];
-        const dy = e.clientY - lastPan[1];
-        setOffset(([ox, oy]) => [ox + dx, oy + dy]);
-        setLastPan([e.clientX, e.clientY]);
-        draw();
-      }
-
-      if (isMovingBrush && moveStart && brushBox) {
-        const dx = mx - moveStart[0];
-        const dy = my - moveStart[1];
-        const [x1, y1, x2, y2] = brushBox;
-        setBrushBox([x1 + dx, y1 + dy, x2 + dx, y2 + dy]);
-        setMoveStart([mx, my]);
-        draw();
-      }
-
-      if (isDragging && start) {
-        setEnd([mx, my]);
-        draw();
-      }
-
-      let foundKey: string | null = null;
-      umapEmbedding.forEach(([x, y], i) => {
-        const cx = scaleX(x);
-        const cy = scaleY(y);
-        const dist = Math.hypot(mx - cx, my - cy);
-       
-        const indicator = featureMatrix[i]?.[index];
-        const isActive = selectedIndicator === -1 || indicator === selectedIndicator;
-
-        if (dist < 6 && isActive) {
-          foundKey = keys[i];
-        }
-      });
-      
-      if (canvas)
-        canvas.style.cursor = foundKey ? 'default' : 'crosshair';
-
-      if (!isMovingBrush){
-        onHover?.(foundKey);
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isDragging && start && end) {
-        const [x1, y1] = start;
-        const [x2, y2] = end;
-        if (Math.abs(x2 - x1) < 3 && Math.abs(y2 - y1) < 3) {
-          setBrushBox(null);
-          setSelectedKeys([]);
-          setSelectedIndices([]);
-        } else {
-          setBrushBox([
-            Math.min(x1, x2),
-            Math.min(y1, y2),
-            Math.max(x1, x2),
-            Math.max(y1, y2),
-          ]);
-        }
-        draw();
-      }
-
-      setIsDragging(false);
-      setIsPanning(false);
-      setIsMovingBrush(false);
-      setLastPan(null);
-      setMoveStart(null);
-      setStart(null);
+    } else {
+      setIsDragging(true);
+      setStart([lx, ly]);
       setEnd(null);
-    };
+    }
+  };
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const zoomFactor = 1.05;
-      const direction = e.deltaY < 0 ? 1 : -1;
-      const newScale = Math.max(1, Math.min(5, scale * (direction > 0 ? zoomFactor : 1 / zoomFactor)));
+  const handleMouseMove = (e: MouseEvent) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const [lx, ly] = inverseScale(mx, my);
 
-      // Zoom to center
-      const cx = canvasWidth / 2;
-      const cy = canvasHeight / 2;
-      const dx = cx - offset[0];
-      const dy = cy - offset[1];
-      setOffset([offset[0] - dx * (newScale / scale - 1), offset[1] - dy * (newScale / scale - 1)]);
-      setScale(newScale);
-      draw();
-    };
+    if (isPanning && lastPan) {
+      const dx = e.clientX - lastPan[0];
+      const dy = e.clientY - lastPan[1];
+      setOffset(([ox, oy]) => [ox + dx, oy + dy]);
+      setLastPan([e.clientX, e.clientY]);
+      return;
+    }
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    if (isMovingBrush && moveStart && brushBox) {
+      const dx = lx - moveStart[0];
+      const dy = ly - moveStart[1];
+      const [x1, y1, x2, y2] = brushBox;
+      setBrushBox([x1 + dx, y1 + dy, x2 + dx, y2 + dy]);
+      setMoveStart([lx, ly]);
+      return;
+    }
+
+    if (isDragging && start) {
+      setEnd([lx, ly]);
+    }
+
+    let foundKey: { familyCode: string; surveyNumber: string } | null = null;
+    data.forEach(row => {
+      const [x, y] = row.embedding;
+      const cx = scaleX(x);
+      const cy = scaleY(y);
+      const dist = Math.hypot(mx - cx, my - cy);
+      const indicator = row.features['income'];
+      const isActive = selectedIndicator === -1 || indicator === selectedIndicator;
+      if (dist < 6 && isActive) {
+        foundKey = { familyCode: row.familyCode, surveyNumber: row.surveyNumber };
+      }
+    });
+
+    canvasRef.current!.style.cursor = foundKey ? 'pointer' : 'crosshair';
+    if (!isDragging && !isMovingBrush) onHover?.(foundKey);
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && start && end) {
+      const [x1, y1] = start;
+      const [x2, y2] = end;
+      if (Math.abs(x2 - x1) < 1e-5 && Math.abs(y2 - y1) < 1e-5) {
+        setBrushBox(null);
+      } else {
+        setBrushBox([Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2)]);
+      }
+    }
+    setIsDragging(false);
+    setIsMovingBrush(false);
+    setMoveStart(null);
+    setIsPanning(false);
+    setLastPan(null);
+    setStart(null);
+    setEnd(null);
+  };
+
+  const handleWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = 1.05;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const newScale = Math.max(1, Math.min(5, scale * (direction > 0 ? zoomFactor : 1 / zoomFactor)));
+
+    const cx = canvasWidth / 2;
+    const cy = canvasHeight / 2;
+    const dx = cx - offset[0];
+    const dy = cy - offset[1];
+
+    setOffset([offset[0] - dx * (newScale / scale - 1), offset[1] - dy * (newScale / scale - 1)]);
+    setScale(newScale);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setBrushBox(null);
         setSelectedKeys([]);
         setSelectedIndices([]);
-        setSelectedIndicator(-1);
         draw();
       } else if (e.key === 'r' || e.key === 'R') {
         setScale(1);
@@ -278,6 +242,9 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
       }
     };
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     window.addEventListener('keydown', handleKeyDown);
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -291,26 +258,7 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
       canvas.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('wheel', handleWheel);
     };
-  }, [
-    brushBox,
-    start,
-    end,
-    isDragging,
-    isPanning,
-    lastPan,
-    isMovingBrush,
-    moveStart,
-    offset,
-    scale,
-    keys,
-    selectedIndices,
-    selectedKeys,
-    setSelectedIndices,
-    setSelectedKeys,
-    draw,
-    umapEmbedding,
-    onHover,
-  ]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleWheel]);
 
   return (
     <canvas
@@ -319,7 +267,7 @@ export function ScatterPlot({ onHover }: { onHover?: (key: string | null) => voi
         border: '1px solid #ccc',
         width: canvasWidth,
         height: canvasHeight,
-        cursor: isPanning ? 'grabbing' : isDragging || isMovingBrush ? 'crosshair' : 'default',
+        cursor: isPanning ? 'grabbing' : (isDragging || isMovingBrush) ? 'crosshair' : 'default',
       }}
     />
   );
