@@ -40,7 +40,7 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
 
     const selectedRows = (
       family 
-        ? data.filter(row => row.familyCode === family.familyCode && row.surveyNumber === family.surveyNumber)
+        ? data.filter(row => row.familyCode === family.familyCode)
         : selectedIndices.length > 0 
           ? selectedIndices.map(i => data[i])
           : data
@@ -190,7 +190,7 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
 
   const selectedRows = (
   family 
-    ? data.filter(row => row.familyCode === family.familyCode && row.surveyNumber === family.surveyNumber)
+    ? data.filter(row => row.familyCode === family.familyCode)
     : selectedIndices.length > 0 
       ? selectedIndices.map(i => data[i])
       : data
