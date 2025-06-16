@@ -17,6 +17,7 @@ export function ScatterPlot({ onHover, searchValue }: {
     setBrushBox,
     brushBox,
     colorMap,
+    selectedFeature,
   } = useStore();
 
   const [scale, setScale] = useState(1);
@@ -32,7 +33,6 @@ export function ScatterPlot({ onHover, searchValue }: {
   const canvasWidth = 600;
   const canvasHeight = 450;
   const margin = 40;
-  const index = featureNames.indexOf('income');
 
   const xExtent = [
     Math.min(...data.map((d) => d.embedding[0])) - 0.1,
@@ -66,12 +66,21 @@ export function ScatterPlot({ onHover, searchValue }: {
     const newSelectedKeys: { familyCode: string; surveyNumber: string }[] = [];
 
     data.forEach((row, i) => {
-      const tooltipMatches = !searchValue || row.tooltip.toLowerCase().includes(searchValue.toLowerCase());
-        if (!tooltipMatches) return;
+      const keywords = searchValue
+      .split(',')
+      .map(word => word.trim().toLowerCase())
+      .filter(word => word.length > 0);
+
+    const tooltipMatches = keywords.length === 0 || keywords.some(keyword => 
+      row.tooltip.toLowerCase().includes(keyword)
+    );
+
+    if (!tooltipMatches) return;
+
       const [x, y] = row.embedding;
       const cx = scaleX(x);
       const cy = scaleY(y);
-      const val = row.features['income'];
+      const val = row.features[selectedFeature || 'income'];
       const indicatorMatch = selectedIndicator === -1 || val === selectedIndicator;
 
       let inBrush = true;
@@ -114,7 +123,7 @@ export function ScatterPlot({ onHover, searchValue }: {
       ctx.lineWidth = 1.5;
       ctx.strokeRect(Math.min(px1, px2), Math.min(py1, py2), Math.abs(px2 - px1), Math.abs(py2 - py1));
     }
-  }, [data, featureNames, brushBox, selectedIndicator, scale, offset, colorMap, selectedIndices, selectedKeys, searchValue]);
+  }, [data, featureNames, brushBox, selectedIndicator, scale, offset, colorMap, selectedIndices, selectedKeys, searchValue, selectedFeature]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

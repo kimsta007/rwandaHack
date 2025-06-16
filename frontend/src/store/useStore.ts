@@ -41,7 +41,7 @@ export const useStore = create<State>((set) => ({
   featureNames: [],
   selectedIndices: [],
   selectedKeys: [],
-  selectedFeature: '',
+  selectedFeature: 'income',
   selectedIndicator: -1,
   brushBox: null, 
 

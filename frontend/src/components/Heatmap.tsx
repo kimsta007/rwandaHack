@@ -44,7 +44,16 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
         : selectedIndices.length > 0 
           ? selectedIndices.map(i => data[i])
           : data
-    ).filter(row => !searchValue || row.tooltip.toLowerCase().includes(searchValue.toLowerCase()));
+    ).filter(row => {
+        if (!searchValue) return true;
+        const keywords = searchValue
+          .split(',')
+          .map((word) => word.trim().toLowerCase())
+          .filter(Boolean); 
+        return keywords.some((keyword) =>
+          row.tooltip.toLowerCase().includes(keyword)
+        );
+    });
 
     const rows = selectedRows.length;
     const cols = featureNames.length;
@@ -77,18 +86,9 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(-Math.PI / 2);
+      ctx.font = (label === selectedFeature) ? 'bold 13px sans-serif' : '13px sans-serif';
       ctx.fillStyle = 'black';
       ctx.fillText(label, -labelHeight, 0);
-
-      if (label === selectedFeature) {
-        const textWidth = ctx.measureText(label).width;
-        ctx.beginPath();
-        ctx.moveTo(-labelHeight, 0);
-        ctx.lineTo(-labelHeight + textWidth, 0);
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = 'black';
-        ctx.stroke();
-      }
       ctx.restore();
     }
 
@@ -194,7 +194,16 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
     : selectedIndices.length > 0 
       ? selectedIndices.map(i => data[i])
       : data
-  ).filter(row => !searchValue || row.tooltip.toLowerCase().includes(searchValue.toLowerCase()));
+  ).filter(row => {
+        if (!searchValue) return true;
+        const keywords = searchValue
+          .split(',')
+          .map((word) => word.trim().toLowerCase())
+          .filter(Boolean); 
+        return keywords.some((keyword) =>
+          row.tooltip.toLowerCase().includes(keyword)
+        );
+    });
 
   const row = Math.floor(my / cellSize);
   const col = Math.floor(mx / cellSize);
