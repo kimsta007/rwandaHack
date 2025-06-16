@@ -36,7 +36,7 @@ export function GeoMap() {
     });
 
     // Load GeoJSON
-    fetch('../../data/nc.geojson')
+    fetch('/data/nc.geojson')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load GeoJSON');
         return res.json();
