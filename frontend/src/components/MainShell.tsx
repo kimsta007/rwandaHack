@@ -5,11 +5,27 @@ import { HoverInfo } from './HoverInfo';
 import { GeoMap } from './GeoMap';
 import { useState } from 'react';
 import { Group, Grid, ScrollArea, AppShell, 
-                Burger, Drawer, Text, CloseButton, Input, Stack, NativeSelect, Divider, NumberInput } from '@mantine/core';
+                Burger, Drawer, Text, CloseButton, Input, 
+                Stack, NativeSelect, Divider, NumberInput,
+                Button} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
 export function MainShell(
-  { onFeatureClick }: { onFeatureClick?: (featureName: string) => void } = {}
+  { 
+    onGroupFeatureClick, 
+    neighbours,
+    minDist,
+    metric,
+    setNeighbours,
+    setMinDist,
+   }: { 
+    onGroupFeatureClick?: (groupName: string[]) => void;
+    neighbours: number;
+    minDist: number;
+    metric: string;
+    setNeighbours?: (neighbours: number) => void;
+    setMinDist?:(minDist: number) => void;
+  }
 ) {
   const [scatterHovered, setScatterHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
   const [heatmapHovered, setHeatmapHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
@@ -30,7 +46,7 @@ export function MainShell(
         <Group h="100%" px="0" justify="space-between">
           <Group h="100%" px="md">
             <Burger opened={opened} onClick={open} visibleFrom="sm" size="sm" />
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>North Carolina - Poverty Spotlight</h1>
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>North Carolina - Poverty Stoplight</h1>
           </Group>
 
           <Group h="100%" align="center" gap="md">
@@ -73,18 +89,20 @@ export function MainShell(
            <NumberInput
             label="Number of Neighbours (n_neighbours)"
             min={2}
-            defaultValue={15}
+            defaultValue={neighbours}
             max={100}
           />
           <NumberInput
             label="Minimum Distance (min_dist)"
             min={0.1}
             decimalScale={1}
-            defaultValue={0.1}
+            defaultValue={minDist}
             fixedDecimalScale
             max={100.0}
           />
-          <NativeSelect label="Metric" data={['Euclidean', 'Manhattan', 'Jaccard', 'Hamming', 'Correlation']} />
+          <NativeSelect label="Metric" data={['Euclidean', 'Manhattan', 'Jaccard', 'Hamming', 'Correlation']} 
+          defaultValue={metric}/>
+          <Button variant="danger" mt='md'>Re-calculate</Button>
         </Drawer>
       </AppShell.Navbar>
 
@@ -106,7 +124,7 @@ export function MainShell(
 
           <Grid.Col span={8}>
             <Heatmap 
-              onFeatureClick={onFeatureClick} 
+              onGroupFeatureClick={onGroupFeatureClick} 
               family={scatterHovered} 
               onHover={(key) => {
                 setHeatmapHovered(key);

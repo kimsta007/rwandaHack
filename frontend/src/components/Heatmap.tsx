@@ -2,13 +2,13 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 
 const featureGroups = [
-  { name: 'Income & Employment', features: ['income', 'savings', 'credit', 'bankServices', 'debt', 'employabilityReadiness',
+  { name: 'Income & Employment', features: ['income', 'savings', 'credit', 'bankServices', 'debt', 'budget', 'employabilityReadiness',
     'stableIncome', 'identification']},
   { name: 'Health & Environment', features: ['environment', 'garbage', 'water', 'healthServices', 'mentalHealthServices', 'nutritiousDiet',
     'foodAccess', 'physicalActivity', 'addiction', 'householdViolence', 'hygiene', 'sexualHealth', 'healthyTeeth', 'healthyVision',
   'vaccines', 'insurance']},  
   { name: 'Housing & Infrastructure', features: ['stableHousing', 'safeHouse', 'enoughSpace', 'kitchen', 'bathroom', 'appliances',
-    'phone', 'clothing', 'safety', 'secutityOfProperty', 'electricity', 'transportation']},
+    'phone', 'clothing', 'safety', 'securityOfProperty', 'electricity', 'transportation']},
   { name: 'Education and Culture', features: ['schooling', 'literacy', 'incarceration', 'generateIncome', 'internet', 'entertainment',
     'discrimination', 'community']},
   { name: 'O & P', features: ['closeRelationships', 'civicEngagement', 'resolveProblems'] },
@@ -16,8 +16,8 @@ const featureGroups = [
     'spiritualWellBeing', 'agency', 'continuousLearning']},
 ];
 
-export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
-  onFeatureClick?: (featureName: string) => void;
+export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
+  onGroupFeatureClick?: (groupName: string[]) => void;
   onHover?: (family: { familyCode: string; surveyNumber: string } | null) => void;
   family?: { familyCode: string; surveyNumber: string } | null;
   searchValue: string;
@@ -25,18 +25,23 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { data, featureNames, selectedIndices, selectedKeys, selectedFeature, setSelectedFeature, colorMap } = useStore();
-
+  const groupBoxesRef = useRef<{ label: String; features: string[]; x: number; y: number; width: number; height: number }[]>([]);
+  
   const cellSize = 20;
   const gap = 2;
   const labelHeight = 180;
   const labelWidth = 400;
   const groupLabelHeight = 30;
 
+
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || featureNames.length === 0) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    groupBoxesRef.current = [];
 
     const selectedRows = (
       family 
@@ -106,6 +111,16 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
       const lastCol = Math.max(...groupFeatureIndices);
       const groupWidth = (lastCol - firstCol + 1) * cellSize;
       const groupX = firstCol * cellSize + labelWidth / 2;
+      const groupY = labelHeight - groupLabelHeight;
+      
+      groupBoxesRef.current.push({
+          label: group.name,
+          features: group.features,
+          x: groupX,
+          y: groupY,
+          width: groupWidth,
+          height: groupLabelHeight,
+      });
 
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 1;
@@ -226,6 +241,18 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
     const adjustedClickX = clickX - labelWidth / 2;
     const adjustedClickY = clickY - 40;
 
+    for (const box of groupBoxesRef.current) {
+      if (
+        clickX >= box.x &&
+        clickX <= box.x + box.width &&
+        clickY >= box.y &&
+        clickY <= box.y + box.height
+      ) {
+        onGroupFeatureClick?.(box.features);
+        return;
+      }
+    }
+
     if (clickY > labelHeight - 40) return;
 
     for (let j = 0; j < featureNames.length; j++) {
@@ -239,7 +266,6 @@ export function Heatmap({ onFeatureClick, onHover, family, searchValue }: {
         adjustedClickY <= rotatedBox.y + rotatedBox.height
       ) {
         const featureName = featureNames[j];
-        onFeatureClick?.(featureName);
         setSelectedFeature(featureName);
         break;
       }

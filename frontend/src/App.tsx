@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import axios from 'axios';
 import { MainShell } from './components/MainShell';
 import { useStore } from './store/useStore';
@@ -8,18 +8,21 @@ import './App.css';
 
 function App() {
   const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading } = useStore();
+  const [ neighbours, setNeighbours ] = useState(15);
+  const [ minDist, setMinDist ] = useState(0.1);
+  const [ metric, setMetric ] = useState("Euclidean");
 
   const umap = useCallback(() => {
     setIsLoading(true);
     axios.post("http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
-      n_neighbors: 15,
-      min_dist: 0.1,
-      metric: "euclidean"
+      n_neighbors: neighbours,
+      min_dist: minDist,
+      metric: metric.toLowerCase()
     }).then(res => {
-      setData(res.data.data);                  // unified data array
-      setFeatureNames(res.data.featureNames);  // feature names
-      setSelectedFeature('');                  // reset feature selection
+      setData(res.data.data);                   
+      setFeatureNames(res.data.featureNames);   
+      setSelectedFeature('');                   
     }).finally(() => {
       setIsLoading(false);
     });
@@ -38,22 +41,17 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [umap]);
 
-  const handleFeatureClick = async (feature: string) => {
-    const res = await axios.post("$http://localhost:8000/umap", {
+  const handleGroupFeatureClick = async (groupFeature: string[]) => {
+    console.log(groupFeature, neighbours, minDist, metric.toLowerCase())
+    const res = await axios.post("http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
-      selectedFeature: feature,
-      n_neighbors: 15,
-      min_dist: 0.1,
-      metric: "euclidean"
+      selectedFeatures: groupFeature,
+      n_neighbors: neighbours,
+      min_dist: minDist,
+      metric: metric.toLowerCase()
     });
 
-    // Only embedding changes on recalculation
-    useStore.setState((state) => ({
-      data: state.data.map((item, index) => ({
-        ...item,
-        embedding: res.data.embedding[index]
-      }))
-    }));
+    setData(res.data.data);  
   };
 
   return (
@@ -63,7 +61,12 @@ function App() {
           <Loader size="lg" />
         </Center>
       ) : (
-        <MainShell onFeatureClick={handleFeatureClick} />
+        <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
+          neighbours={neighbours}
+          minDist={minDist}
+          metric={metric}
+          setNeighbours={setNeighbours} 
+          setMinDist={setMinDist}/>
       )}
     </MantineProvider>
   );

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
@@ -27,7 +27,7 @@ class UMAPRequest(BaseModel):
     n_neighbors: int = 15
     min_dist: float = 0.1
     metric: str = "euclidean"
-    selectedFeature: Optional[str] = None
+    selectedFeatures: Optional[List[str]] = None
 
 def to_camel_case(text: str) -> str:
     words = re.split(r'\s+', text.strip().lower())
@@ -62,6 +62,12 @@ def compute_umap(req: UMAPRequest):
     df_priorities['surveyNumber'] = df_priorities['surveyNumber'].str.replace('º', '', regex=False)
     
     excluded_cols = ['organization', 'project', 'familyCode', 'createdAt', 'surveyNumber', 'reds', 'yellows', 'greens']
+    all_feature_cols = [col for col in df_indicators.columns if col not in excluded_cols]
+
+    if req.selectedFeatures:
+        selected_features = [f for f in req.selectedFeatures if f in all_feature_cols]
+    else:
+        selected_features = all_feature_cols
 
     df_tooltip = (
         df_priorities
@@ -72,7 +78,7 @@ def compute_umap(req: UMAPRequest):
             ).reset_index(name='tooltip')
     )
 
-    umap_df = df_indicators.drop(columns=excluded_cols)
+    umap_df = df_indicators[selected_features]
     df = executor.submit(run_umap, umap_df, req.n_neighbors, req.min_dist, req.metric)
     embedding = df.result()
 
