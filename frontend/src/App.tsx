@@ -8,9 +8,12 @@ import './App.css';
 
 function App() {
   const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading } = useStore();
-  const [ neighbours, setNeighbours ] = useState(15);
-  const [ minDist, setMinDist ] = useState(0.1);
-  const [ metric, setMetric ] = useState("Euclidean");
+  // const [ neighbours, setNeighbours ] = useState(15);
+  // const [ minDist, setMinDist ] = useState(0.1);
+  // const [ metric, setMetric ] = useState("Euclidean");
+  const [ neighbours ] = useState(15);
+  const [ minDist ] = useState(0.1);
+  const [ metric ] = useState("Euclidean");
 
   const umap = useCallback(() => {
     setIsLoading(true);
@@ -61,13 +64,17 @@ function App() {
           <Loader size="lg" />
         </Center>
       ) : (
-        <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
+        // <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
+        //   neighbours={neighbours}
+        //   minDist={minDist}
+        //   metric={metric}
+        //   setNeighbours={setNeighbours} 
+        //   setMinDist={setMinDist}/>
+         <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
           neighbours={neighbours}
           minDist={minDist}
-          metric={metric}
-          setNeighbours={setNeighbours} 
-          setMinDist={setMinDist}/>
-      )}
+          metric={metric}/>
+        )}
     </MantineProvider>
   );
 }

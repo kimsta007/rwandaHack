@@ -221,7 +221,7 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
     });
 
   const row = Math.floor(my / cellSize);
-  const col = Math.floor(mx / cellSize);
+  //const col = Math.floor(mx / cellSize);
 
   if (row >= 0 && row < selectedRows.length) {
     const hoveredRow = selectedRows[row];

@@ -10,21 +10,33 @@ import { Group, Grid, ScrollArea, AppShell,
                 Button} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
+// export function MainShell(
+//   { 
+//     onGroupFeatureClick, 
+//     neighbours,
+//     minDist,
+//     metric,
+//     setNeighbours,
+//     setMinDist,
+//    }: { 
+//     onGroupFeatureClick?: (groupName: string[]) => void;
+//     neighbours: number;
+//     minDist: number;
+//     metric: string;
+//     setNeighbours?: (neighbours: number) => void;
+//     setMinDist?:(minDist: number) => void;
+//   }
 export function MainShell(
   { 
     onGroupFeatureClick, 
     neighbours,
     minDist,
     metric,
-    setNeighbours,
-    setMinDist,
    }: { 
     onGroupFeatureClick?: (groupName: string[]) => void;
     neighbours: number;
     minDist: number;
     metric: string;
-    setNeighbours?: (neighbours: number) => void;
-    setMinDist?:(minDist: number) => void;
   }
 ) {
   const [scatterHovered, setScatterHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
