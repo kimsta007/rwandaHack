@@ -49,7 +49,7 @@ def run_umap(umap_df, n_neighbors, min_dist, metric):
 def format_item(row):
     return f"{row.level} | {row.indicator}: {row.reasonWhy} → {row.actionWhat} $$ {to_camel_case(row.indicator)}"
 
-@app.get("/")
+@app.get("/test")
 def root():
     return {"Message": "Up and Running!"}
 
