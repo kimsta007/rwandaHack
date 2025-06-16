@@ -5,7 +5,7 @@ import { HoverInfo } from './HoverInfo';
 import { GeoMap } from './GeoMap';
 import { useState } from 'react';
 import { Group, Grid, ScrollArea, AppShell, 
-                Burger, Drawer, Text, CloseButton, Input, Stack } from '@mantine/core';
+                Burger, Drawer, Text, CloseButton, Input, Stack, NativeSelect, Divider, NumberInput } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
 export function MainShell(
@@ -65,6 +65,26 @@ export function MainShell(
           zIndex={1000}
         >
           {/* Add UI Controls Here Color by > Cluster */}
+          <Text size="md" td="underline">Data controls</Text>
+          <NativeSelect label="Dataset" data={['North Carolina', 'Rwanda']} />
+          <NativeSelect label="Survey" data={['All', '1', '2', '3']} />
+          <Divider my="md" />
+          <Text size="md" td="underline">UMAP controls</Text>
+           <NumberInput
+            label="Number of Neighbours (n_neighbours)"
+            min={2}
+            defaultValue={15}
+            max={100}
+          />
+          <NumberInput
+            label="Minimum Distance (min_dist)"
+            min={0.1}
+            decimalScale={1}
+            defaultValue={0.1}
+            fixedDecimalScale
+            max={100.0}
+          />
+          <NativeSelect label="Metric" data={['Euclidean', 'Manhattan', 'Jaccard', 'Hamming', 'Correlation']} />
         </Drawer>
       </AppShell.Navbar>
 
