@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 
 const featureGroups = [
@@ -24,9 +24,9 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
 }) {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { data, featureNames, selectedIndices, selectedKeys, selectedFeature, setSelectedFeature, colorMap } = useStore();
-  const groupBoxesRef = useRef<{ label: String; features: string[]; x: number; y: number; width: number; height: number }[]>([]);
-  
+  const { data, featureNames, selectedIndices, selectedKeys, selectedFeature, setSelectedFeature, colorMap, setIsLoading } = useStore();
+  const groupBoxesRef = useRef<{ label: string; features: string[]; x: number; y: number; width: number; height: number }[]>([]);
+  const [ selectedGroup, setSelectedGroup ] = useState<string | null>(null);;
   const cellSize = 20;
   const gap = 2;
   const labelHeight = 180;
@@ -122,9 +122,14 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
           height: groupLabelHeight,
       });
 
+      if (selectedGroup === group.name) {
+        ctx.fillStyle = '#ececec'; 
+        ctx.fillRect(groupX, groupY, groupWidth, groupLabelHeight - 5);
+      }
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 1;
       ctx.strokeRect(groupX, labelHeight - groupLabelHeight, groupWidth, groupLabelHeight - 5);
+      ctx.fillStyle = 'black';
       ctx.fillText(group.name, groupX + groupWidth / 2, labelHeight - groupLabelHeight + 5);
     }
 
@@ -249,6 +254,9 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
         clickY <= box.y + box.height
       ) {
         onGroupFeatureClick?.(box.features);
+        setSelectedGroup(box.label);
+        setIsLoading(true);
+        setSelectedFeature(box.features[0]);
         return;
       }
     }

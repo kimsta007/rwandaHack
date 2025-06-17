@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 
-export function ScatterPlot({ onHover, searchValue }: { 
+export function ScatterPlot({ onHover, searchValue, heatmapHovered }: { 
   onHover?: (key: { familyCode: string; surveyNumber: string } | null) => void; 
   searchValue: string; 
+  heatmapHovered: { familyCode: string; surveyNumber: string } | null;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
@@ -71,11 +72,9 @@ export function ScatterPlot({ onHover, searchValue }: {
       .map(word => word.trim().toLowerCase())
       .filter(word => word.length > 0);
 
-    const tooltipMatches = keywords.length === 0 || keywords.some(keyword => 
+      const tooltipMatches = keywords.length === 0 || keywords.some(keyword => 
       row.tooltip.toLowerCase().includes(keyword)
     );
-
-    if (!tooltipMatches) return;
 
       const [x, y] = row.embedding;
       const cx = scaleX(x);
@@ -96,13 +95,40 @@ export function ScatterPlot({ onHover, searchValue }: {
       }
 
       let color = colorMap[val] || '#bdbdbd';
-      let opacity = indicatorMatch ? 1 : 0.2;
+
+      const isHovered = heatmapHovered?.familyCode === row.familyCode;
+      if (isHovered) return
+
+
+      let opacity = indicatorMatch ? (tooltipMatches ? 1 : 0.1) : 0.1;
 
       ctx.fillStyle = color;
       ctx.globalAlpha = opacity;
       ctx.beginPath();
       ctx.arc(cx, cy, 3.5, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // Refactor
+    data.forEach((row, i) => {
+      const [x, y] = row.embedding;
+      const cx = scaleX(x);
+      const cy = scaleY(y);
+      const val = row.features[selectedFeature || 'income'];
+
+      let color = colorMap[val] || '#bdbdbd';
+      const isHovered = heatmapHovered?.familyCode === row.familyCode;
+      if (!isHovered) return
+
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'black'; 
+      ctx.stroke();
       ctx.globalAlpha = 1;
     });
 
@@ -123,7 +149,7 @@ export function ScatterPlot({ onHover, searchValue }: {
       ctx.lineWidth = 1.5;
       ctx.strokeRect(Math.min(px1, px2), Math.min(py1, py2), Math.abs(px2 - px1), Math.abs(py2 - py1));
     }
-  }, [data, featureNames, brushBox, selectedIndicator, scale, offset, colorMap, selectedIndices, selectedKeys, searchValue, selectedFeature]);
+  }, [data, featureNames, brushBox, selectedIndicator, scale, offset, colorMap, selectedIndices, selectedKeys, searchValue, selectedFeature, heatmapHovered]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

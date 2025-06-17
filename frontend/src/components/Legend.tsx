@@ -7,12 +7,10 @@ export function Legend() {
     selectedIndicator,
     setSelectedIndicator,
     data,
+    selectedFeature,
     setSelectedIndices,
     setSelectedKeys
   } = useStore();
-
-  // Hardcoded for now — you can replace this with selectedFeature if needed
-  const targetFeature = 'income';
 
   const handleClick = (indicator: number) => {
     setSelectedIndicator(selectedIndicator === indicator ? -1 : indicator);
@@ -24,7 +22,7 @@ export function Legend() {
       const newSelectedKeys: { familyCode: string; surveyNumber: string }[] = [];
 
       data.forEach((row, i) => {
-        const val = row.features[targetFeature];
+        const val = row.features[selectedFeature];
         if (val === selectedIndicator) {
           newSelectedIndices.push(i);
           newSelectedKeys.push({
@@ -40,7 +38,7 @@ export function Legend() {
       setSelectedIndices([]);
       setSelectedKeys([]);
     }
-  }, [selectedIndicator, data, targetFeature, setSelectedIndices, setSelectedKeys]);
+  }, [selectedIndicator, data, selectedFeature, setSelectedIndices, setSelectedKeys]);
 
   return (
     <div>

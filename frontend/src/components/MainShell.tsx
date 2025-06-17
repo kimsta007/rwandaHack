@@ -129,6 +129,7 @@ export function MainShell(
                   setHeatmapHovered(null);  
                 }} 
                 searchValue={searchValue}
+                heatmapHovered={heatmapHovered}
               />
               <GeoMap />
             </Stack>

@@ -55,14 +55,15 @@ function App() {
     });
 
     setData(res.data.data);  
+    setIsLoading(false);
   };
 
   return (
     <MantineProvider theme={{}}>
       {isLoading ? (
-        <Center style={{ height: '100%' }}>
+        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Loader size="lg" />
-        </Center>
+        </div>
       ) : (
         // <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
         //   neighbours={neighbours}
