@@ -24,7 +24,9 @@ interface State {
   legendItems: { label: string; color: string; value: number }[];
   isLoading: boolean;
   brushBox: [number, number, number, number] | null;   
+  selectedGroup: string | null;
 
+  setSelectedGroup: (group: string | null) => void;
   setData: (data: RowData[]) => void;
   setFeatureNames: (names: string[]) => void;
   setSelectedIndices: (s: number[]) => void;
@@ -44,6 +46,7 @@ export const useStore = create<State>((set) => ({
   selectedFeature: 'income',
   selectedIndicator: -1,
   brushBox: null, 
+  selectedGroup: null,
 
   colorMap: {
     1: '#984ea3',
@@ -66,4 +69,5 @@ export const useStore = create<State>((set) => ({
   setSelectedFeature: (f) => set({ selectedFeature: f }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setBrushBox: (b) => set({ brushBox: b }),  
+  setSelectedGroup: (group) => set({ selectedGroup: group }),
 }));

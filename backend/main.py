@@ -84,7 +84,7 @@ def compute_umap(req: UMAPRequest):
 
     # Merge indicators and tooltips
     merged_df = df_indicators[['familyCode', 'surveyNumber']].copy()
-    merged_df['features'] = umap_df.to_dict(orient='records')
+    merged_df['features'] = df_indicators[all_feature_cols].to_dict(orient='records')
     merged_df['embedding'] = embedding
     df_tooltip = pd.DataFrame({
       'familyCode': df_tooltip.familyCode,
@@ -105,6 +105,6 @@ def compute_umap(req: UMAPRequest):
         })
 
     return {
-        "featureNames": list(umap_df.columns),
+        "featureNames": all_feature_cols,
         "data": data
     }

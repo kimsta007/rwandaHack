@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 
 const featureGroups = [
@@ -24,9 +24,10 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
 }) {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { data, featureNames, selectedIndices, selectedKeys, selectedFeature, setSelectedFeature, colorMap, setIsLoading } = useStore();
+  const { data, featureNames, selectedIndices, selectedKeys, selectedFeature, 
+    setSelectedFeature, colorMap, setIsLoading, selectedGroup, setSelectedGroup } = useStore();
   const groupBoxesRef = useRef<{ label: string; features: string[]; x: number; y: number; width: number; height: number }[]>([]);
-  const [ selectedGroup, setSelectedGroup ] = useState<string | null>(null);;
+
   const cellSize = 20;
   const gap = 2;
   const labelHeight = 180;
@@ -123,14 +124,15 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
       });
 
       if (selectedGroup === group.name) {
-        ctx.fillStyle = '#ececec'; 
+        ctx.fillStyle = 'black'; 
         ctx.fillRect(groupX, groupY, groupWidth, groupLabelHeight - 5);
+        ctx.fillStyle = 'white';
       }
-      ctx.strokeStyle = 'black';
+
       ctx.lineWidth = 1;
       ctx.strokeRect(groupX, labelHeight - groupLabelHeight, groupWidth, groupLabelHeight - 5);
-      ctx.fillStyle = 'black';
       ctx.fillText(group.name, groupX + groupWidth / 2, labelHeight - groupLabelHeight + 5);
+      ctx.fillStyle = 'black';
     }
 
     // Family code labels
@@ -190,7 +192,7 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
       });
     }
 
-  }, [data, selectedKeys, selectedFeature, family, selectedIndices, featureNames, searchValue]);
+  }, [data, selectedKeys, selectedFeature, family, selectedIndices, featureNames, searchValue, selectedGroup]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
   const canvas = canvasRef.current;
@@ -273,7 +275,12 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
         adjustedClickY >= rotatedBox.y &&
         adjustedClickY <= rotatedBox.y + rotatedBox.height
       ) {
+
         const featureName = featureNames[j];
+        const selectedGroupBox = groupBoxesRef.current.find(box => box.label === selectedGroup);
+        if (selectedGroup && selectedGroupBox && !selectedGroupBox.features.includes(featureName)) {
+          return;
+        }
         setSelectedFeature(featureName);
         break;
       }

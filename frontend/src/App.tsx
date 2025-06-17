@@ -17,7 +17,7 @@ function App() {
 
   const umap = useCallback(() => {
     setIsLoading(true);
-    axios.post("http://34.201.136.23/umap", {
+    axios.post("http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
       n_neighbors: neighbours,
       min_dist: minDist,
@@ -45,8 +45,7 @@ function App() {
   }, [umap]);
 
   const handleGroupFeatureClick = async (groupFeature: string[]) => {
-    console.log(groupFeature, neighbours, minDist, metric.toLowerCase())
-    const res = await axios.post("http://34.201.136.23/umap", {
+    const res = await axios.post("http://localhost:8000/umap", {
       filename: "nc_aspire.xlsx",
       selectedFeatures: groupFeature,
       n_neighbors: neighbours,
@@ -55,6 +54,7 @@ function App() {
     });
 
     setData(res.data.data);  
+    console.log(res.data.data)
     setIsLoading(false);
   };
 
