@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from 'react';
 import axios from 'axios';
 import { MainShell } from './components/MainShell';
 import { useStore } from './store/useStore';
-import { MantineProvider, Center, Loader } from '@mantine/core';
+import { MantineProvider, Loader } from '@mantine/core';
 import "@mantine/core/styles.css";
 import './App.css';
 

@@ -111,7 +111,7 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
     });
 
     // Refactor
-    data.forEach((row, i) => {
+    data.forEach((row) => {
       const [x, y] = row.embedding;
       const cx = scaleX(x);
       const cy = scaleY(y);
