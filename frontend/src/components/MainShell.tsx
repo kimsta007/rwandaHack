@@ -136,15 +136,17 @@ export function MainShell(
           </Grid.Col>
 
           <Grid.Col span={8}>
-            <Heatmap 
-              onGroupFeatureClick={onGroupFeatureClick} 
-              family={scatterHovered} 
-              onHover={(key) => {
-                setHeatmapHovered(key);
-                setScatterHovered(null);  
-              }} 
-              searchValue={searchValue}
-            />
+            <ScrollArea h="calc(100vh - 80px)">
+              <Heatmap 
+                onGroupFeatureClick={onGroupFeatureClick} 
+                family={scatterHovered} 
+                onHover={(key) => {
+                  setHeatmapHovered(key);
+                  setScatterHovered(null);  
+                }} 
+                searchValue={searchValue}
+              />
+            </ScrollArea>
           </Grid.Col>
         </Grid>
       </AppShell.Main>
