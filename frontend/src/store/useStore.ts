@@ -5,6 +5,8 @@ interface RowData {
   surveyNumber: string;
   features: Record<string, number>;
   embedding: [number, number];
+  latitude: number,
+  longitude: number,
   tooltip: string;
 }
 

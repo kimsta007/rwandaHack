@@ -60,6 +60,8 @@ def compute_umap(req: UMAPRequest):
     df_indicators['surveyNumber'] = df_indicators['surveyNumber'].str.replace('º', '', regex=False)
     df_priorities = pd.read_excel(filepath, sheet_name='Priorities')
     df_priorities['surveyNumber'] = df_priorities['surveyNumber'].str.replace('º', '', regex=False)
+    df_families = pd.read_excel(filepath, sheet_name='Families')
+    df_families['surveyNumber'] = df_families['surveyNumber'].str.replace('º', '', regex=False)
     
     excluded_cols = ['organization', 'project', 'familyCode', 'createdAt', 'surveyNumber', 'reds', 'yellows', 'greens']
     all_feature_cols = [col for col in df_indicators.columns if col not in excluded_cols]
@@ -92,7 +94,10 @@ def compute_umap(req: UMAPRequest):
       'tooltip': df_tooltip.tooltip
     })
     merged_df = merged_df.merge(df_tooltip, on=['familyCode', 'surveyNumber'], how='left')
+    merged_df = merged_df.merge(df_families[['familyCode', 'surveyNumber', 'latitude', 'longitude']], on=['familyCode', 'surveyNumber'], how='left')
     merged_df['tooltip'] = merged_df['tooltip'].fillna('')
+    merged_df['latitude'] = merged_df['latitude'].fillna('')
+    merged_df['longitude'] = merged_df['longitude'].fillna('')
 
     data = []
     for _, row in merged_df.iterrows():
@@ -101,7 +106,9 @@ def compute_umap(req: UMAPRequest):
             'surveyNumber': row['surveyNumber'],
             'features': row['features'],
             'embedding': row['embedding'],
-            'tooltip': row['tooltip'] or ''
+            'tooltip': row['tooltip'] or '',
+            'latitude': row['latitude'] or '',
+            'longitude': row['longitude'] or '',
         })
 
     return {

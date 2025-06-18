@@ -23,7 +23,8 @@ function App() {
       min_dist: minDist,
       metric: metric.toLowerCase()
     }).then(res => {
-      setData(res.data.data);                   
+      setData(res.data.data);    
+      console.log(res.data.data)               
       setFeatureNames(res.data.featureNames);   
       setSelectedFeature('');                   
     }).finally(() => {
@@ -54,7 +55,6 @@ function App() {
     });
 
     setData(res.data.data);  
-    console.log(res.data.data)
     setIsLoading(false);
   };
 

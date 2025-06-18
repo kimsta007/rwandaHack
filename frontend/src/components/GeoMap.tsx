@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { useStore } from '../store/useStore';
 import 'leaflet/dist/leaflet.css';
 
 export function GeoMap() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const { data } = useStore();
 
   const ncBounds = L.latLngBounds(
     L.latLng(33.8423, -84.3219), // Southwest (lat, lng)
@@ -35,7 +37,6 @@ export function GeoMap() {
       }
     });
 
-    // Load GeoJSON
     fetch('/data/nc.geojson')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load GeoJSON');
@@ -51,20 +52,18 @@ export function GeoMap() {
         }).addTo(map);
       })
 
-    const points = [
-      [35.7796, -78.6382], // Raleigh
-      [35.2271, -80.8431], // Charlotte
-      [36.0726, -79.7920], // Greensboro
-    ];
-
-    points.forEach(([lat, lng]) => {
-      L.circleMarker([lat, lng], {
-        radius: 5,        
-        color: 'white',
-        fillColor: 'blue', 
-        fillOpacity: 0.8,
-        weight: 2
-      }).addTo(map);
+    data.forEach(row => {
+      const lat = row.latitude;
+      const lng = row.longitude;
+      if (lat && lng) {
+        L.circleMarker([lat, lng], {
+          radius: 5,
+          color: 'white',
+          fillColor: 'blue',
+          fillOpacity: 0.8,
+          weight: 2
+        }).addTo(map);
+      }
     });
 
     return () => {
