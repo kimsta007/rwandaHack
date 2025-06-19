@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 
 export function ScatterPlot({ onHover, searchValue, heatmapHovered }: { 
@@ -9,7 +9,6 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const {
     data,
-    featureNames,
     selectedIndicator,
     selectedIndices,
     selectedKeys,
@@ -35,25 +34,41 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
   const canvasHeight = 450;
   const margin = 40;
 
-  const xExtent = [
-    Math.min(...data.map((d) => d.embedding[0])) - 0.1,
-    Math.max(...data.map((d) => d.embedding[0])) + 0.1,
-  ];
-  const yExtent = [
-    Math.min(...data.map((d) => d.embedding[1])) - 0.1,
-    Math.max(...data.map((d) => d.embedding[1])) + 0.1,
-  ];
+  const [xExtent, yExtent] = useMemo(() => {
+    return [
+      [
+        Math.min(...data.map((d) => d.embedding[0])) - 0.1,
+        Math.max(...data.map((d) => d.embedding[0])) + 0.1,
+      ],
+      [
+        Math.min(...data.map((d) => d.embedding[1])) - 0.1,
+        Math.max(...data.map((d) => d.embedding[1])) + 0.1,
+      ]
+    ];
+  }, [data]);
 
-  const scaleX = (x: number) =>
-    ((x - xExtent[0]) / (xExtent[1] - xExtent[0])) * (canvasWidth - 2 * margin) * scale + offset[0] + margin;
-  const scaleY = (y: number) =>
-    canvasHeight - (((y - yExtent[0]) / (yExtent[1] - yExtent[0])) * (canvasHeight - 2 * margin) * scale + offset[1] + margin);
+  const scaleFunctions = useMemo(() => {
+    return {
+      scaleX: (x: number) =>
+        ((x - xExtent[0]) / (xExtent[1] - xExtent[0])) * (canvasWidth - 2 * margin) * scale + offset[0] + margin,
+      scaleY: (y: number) =>
+        canvasHeight - (((y - yExtent[0]) / (yExtent[1] - yExtent[0])) * (canvasHeight - 2 * margin) * scale + offset[1] + margin),
+      inverseScale: (px: number, py: number): [number, number] => {
+        const x = ((px - margin - offset[0]) / ((canvasWidth - 2 * margin) * scale)) * (xExtent[1] - xExtent[0]) + xExtent[0];
+        const y = ((canvasHeight - py - margin - offset[1]) / ((canvasHeight - 2 * margin) * scale)) * (yExtent[1] - yExtent[0]) + yExtent[0];
+        return [x, y];
+      }
+    };
+  }, [xExtent, yExtent, scale, offset]);
 
-  const inverseScale = (px: number, py: number): [number, number] => {
-    const x = ((px - margin - offset[0]) / ((canvasWidth - 2 * margin) * scale)) * (xExtent[1] - xExtent[0]) + xExtent[0];
-    const y = ((canvasHeight - py - margin - offset[1]) / ((canvasHeight - 2 * margin) * scale)) * (yExtent[1] - yExtent[0]) + yExtent[0];
-    return [x, y];
-  };
+  const { scaleX, scaleY, inverseScale } = scaleFunctions;
+
+  const keywords = useMemo(() => {
+    return searchValue
+      .split(',')
+      .map(word => word.trim().toLowerCase())
+      .filter(word => word.length > 0);
+  }, [searchValue]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -67,14 +82,9 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
     const newSelectedKeys: { familyCode: string; surveyNumber: string }[] = [];
 
     data.forEach((row, i) => {
-      const keywords = searchValue
-      .split(',')
-      .map(word => word.trim().toLowerCase())
-      .filter(word => word.length > 0);
-
       const tooltipMatches = keywords.length === 0 || keywords.some(keyword => 
-      row.tooltip.toLowerCase().includes(keyword)
-    );
+        row.tooltip.toLowerCase().includes(keyword)
+      );
 
       const [x, y] = row.embedding;
       const cx = scaleX(x);
@@ -94,12 +104,10 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
         newSelectedKeys.push({ familyCode: row.familyCode, surveyNumber: row.surveyNumber });
       }
 
-      let color = colorMap[val] || '#bdbdbd';
-
       const isHovered = heatmapHovered?.familyCode === row.familyCode;
-      if (isHovered) return
+      if (isHovered) return;
 
-
+      let color = colorMap[val] || '#bdbdbd';
       let opacity = indicatorMatch ? (tooltipMatches ? 1 : 0.1) : 0.1;
 
       ctx.fillStyle = color;
@@ -110,16 +118,16 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
       ctx.globalAlpha = 1;
     });
 
-    // Refactor
+    // Draw hovered points on top
     data.forEach((row) => {
+      const isHovered = heatmapHovered?.familyCode === row.familyCode;
+      if (!isHovered) return;
+
       const [x, y] = row.embedding;
       const cx = scaleX(x);
       const cy = scaleY(y);
       const val = row.features[selectedFeature || 'income'];
-
       let color = colorMap[val] || '#bdbdbd';
-      const isHovered = heatmapHovered?.familyCode === row.familyCode;
-      if (!isHovered) return
 
       ctx.fillStyle = color;
       ctx.globalAlpha = 1;
@@ -132,13 +140,13 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
       ctx.globalAlpha = 1;
     });
 
-    if (
-      JSON.stringify(newSelectedIndices) !== JSON.stringify(selectedIndices)
-    ) {
+    // Update selections if changed
+    if (JSON.stringify(newSelectedIndices) !== JSON.stringify(selectedIndices)) {
       setSelectedIndices(newSelectedIndices);
       setSelectedKeys(newSelectedKeys);
     }
 
+    // Draw brush box if exists
     if (brushBox) {
       const [x1, y1, x2, y2] = brushBox;
       const px1 = scaleX(x1);
@@ -149,7 +157,19 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
       ctx.lineWidth = 1.5;
       ctx.strokeRect(Math.min(px1, px2), Math.min(py1, py2), Math.abs(px2 - px1), Math.abs(py2 - py1));
     }
-  }, [data, featureNames, brushBox, selectedIndicator, scale, offset, colorMap, selectedIndices, selectedKeys, searchValue, selectedFeature, heatmapHovered]);
+  }, [
+    data,
+    keywords,
+    brushBox,
+    selectedIndicator,
+    colorMap,
+    selectedIndices,
+    selectedKeys,
+    selectedFeature,
+    heatmapHovered,
+    scaleX,
+    scaleY
+  ]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -159,7 +179,8 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
     draw();
   }, [draw]);
 
-  const handleMouseDown = (e: MouseEvent) => {
+  // Event handlers with useCallback
+  const handleMouseDown = useCallback((e: MouseEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
@@ -184,9 +205,9 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
       setStart([lx, ly]);
       setEnd(null);
     }
-  };
+  }, [brushBox, inverseScale]);
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
@@ -228,9 +249,9 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
 
     canvasRef.current!.style.cursor = foundKey ? 'pointer' : 'crosshair';
     if (!isDragging && !isMovingBrush) onHover?.(foundKey);
-  };
+  }, [isPanning, isMovingBrush, isDragging, lastPan, moveStart, brushBox, start, data, selectedIndicator, scaleX, scaleY, inverseScale, onHover]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (isDragging && start && end) {
       const [x1, y1] = start;
       const [x2, y2] = end;
@@ -247,9 +268,9 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
     setLastPan(null);
     setStart(null);
     setEnd(null);
-  };
+  }, [isDragging, start, end]);
 
-  const handleWheel = (e: WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const zoomFactor = 1.05;
     const direction = e.deltaY < 0 ? 1 : -1;
@@ -262,24 +283,26 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
 
     setOffset([offset[0] - dx * (newScale / scale - 1), offset[1] - dy * (newScale / scale - 1)]);
     setScale(newScale);
-  };
+  }, [scale, offset]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setBrushBox(null);
-        setSelectedKeys([]);
-        setSelectedIndices([]);
-        draw();
-      } else if (e.key === 'r' || e.key === 'R') {
-        setScale(1);
-        setOffset([0, 0]);
-        draw();
-      }
-    };
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setBrushBox(null);
+      setSelectedKeys([]);
+      setSelectedIndices([]);
+      draw();
+    } else if (e.key === 'r' || e.key === 'R') {
+      setScale(1);
+      setOffset([0, 0]);
+      draw();
+    }
+  }, [draw]);
 
+  // Event listeners setup
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
     window.addEventListener('keydown', handleKeyDown);
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -293,7 +316,7 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
       canvas.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('wheel', handleWheel);
     };
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleWheel]);
+  }, [handleKeyDown, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel]);
 
   return (
     <canvas
@@ -307,3 +330,5 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
     />
   );
 }
+
+export default React.memo(ScatterPlot);

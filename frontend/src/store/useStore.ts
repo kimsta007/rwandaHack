@@ -3,6 +3,7 @@ import { create } from 'zustand';
 interface RowData {
   familyCode: string;
   surveyNumber: string;
+  surveyDate: string;
   features: Record<string, number>;
   embedding: [number, number];
   latitude: number,

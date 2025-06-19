@@ -131,7 +131,10 @@ export function MainShell(
                 searchValue={searchValue}
                 heatmapHovered={heatmapHovered}
               />
-              <GeoMap />
+              <GeoMap 
+                scatterHovered={scatterHovered}
+                heatmapHovered={heatmapHovered}
+              />
             </Stack>
           </Grid.Col>
 
