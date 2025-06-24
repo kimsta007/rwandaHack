@@ -18,6 +18,9 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
     brushBox,
     colorMap,
     selectedFeature,
+    setSelectedGroup,
+    setSelectedFeature,
+    setSelectedIndicator,
   } = useStore();
 
   const [scale, setScale] = useState(1);
@@ -286,17 +289,17 @@ export function ScatterPlot({ onHover, searchValue, heatmapHovered }: {
   }, [scale, offset]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === 'r' || e.key === 'R') {
+      setScale(1);
+      setOffset([0, 0]);
+      setSelectedGroup(null);
+      setSelectedFeature('income');
+      setSelectedIndicator(-1);
       setBrushBox(null);
       setSelectedKeys([]);
       setSelectedIndices([]);
-      draw();
-    } else if (e.key === 'r' || e.key === 'R') {
-      setScale(1);
-      setOffset([0, 0]);
-      draw();
     }
-  }, [draw]);
+  }, [setSelectedGroup, setSelectedFeature, setSelectedIndicator]);
 
   // Event listeners setup
   useEffect(() => {

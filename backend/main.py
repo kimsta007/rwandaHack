@@ -95,11 +95,30 @@ def compute_umap(req: UMAPRequest):
       'tooltip': df_tooltip.tooltip
     })
     merged_df = merged_df.merge(df_tooltip, on=['familyCode', 'surveyNumber'], how='left')
-    merged_df = merged_df.merge(df_families[['familyCode', 'surveyNumber', 'surveyDate', 'latitude', 'longitude']], on=['familyCode', 'surveyNumber'], how='left')
+    merged_df = merged_df.merge(df_families[[
+        'familyCode', 'surveyNumber', 
+        'surveyDate', 'latitude', 
+        'longitude', 'houseHold', 
+        'race', 'housing', 
+        'lgbtq', 'automobile', 
+        'education', 'income',
+        'ece', 'employment',
+        'assistance' 
+        ]], on=['familyCode', 'surveyNumber'], how='left')
     merged_df['tooltip'] = merged_df['tooltip'].fillna('')
     merged_df['latitude'] = merged_df['latitude'].fillna('')
     merged_df['longitude'] = merged_df['longitude'].fillna('')
     merged_df['surveyDate'] = merged_df['surveyDate'].fillna('')
+    merged_df['houseHold'] = merged_df['houseHold'].fillna('')
+    merged_df['race'] = merged_df['race'].fillna('')
+    merged_df['housing'] = merged_df['housing'].fillna('')
+    merged_df['lgbtq'] = merged_df['lgbtq'].fillna('')
+    merged_df['automobile'] = merged_df['automobile'].fillna('')
+    merged_df['education'] = merged_df['education'].fillna('')
+    merged_df['income'] = merged_df['income'].fillna('')
+    merged_df['ece'] = merged_df['ece'].fillna('')
+    merged_df['employment'] = merged_df['employment'].fillna('')
+    merged_df['assistance'] = merged_df['assistance'].fillna('')
 
     data = []
     for _, row in merged_df.iterrows():
@@ -112,6 +131,16 @@ def compute_umap(req: UMAPRequest):
             'latitude': row['latitude'] or '',
             'longitude': row['longitude'] or '',
             'surveyDate': row['surveyDate'] or '',
+            'houseHold': row['houseHold'] or '',
+            'race': row['race'] or '',
+            'housing': row['housing'] or '',
+            'lgbtq': row['lgbtq'] or '',
+            'automobile': row['automobile'] or '',
+            'education': row['education'] or '',
+            'income': row['income'] or '',
+            'ece': row['ece'] or '',
+            'employment': row['employment'] or '',
+            'assistance': row['assistance'] or ''
         })
 
     return {

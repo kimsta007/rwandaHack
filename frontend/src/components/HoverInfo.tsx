@@ -1,4 +1,4 @@
-import { Card, Text, Group, Badge } from '@mantine/core';
+import { Card, Text, Group, Badge, ScrollArea } from '@mantine/core';
 import { Fragment } from 'react';
 import { useStore } from '../store/useStore';
 
@@ -23,7 +23,7 @@ export function HoverInfo({ familyCode, surveyNumber }: { familyCode: string | n
   }
 
   return (
-    <Card padding="md" radius="md" withBorder>
+    <Card padding="md" radius="md" withBorder style={{ height: '500px' }}>
       <Group justify="space-between" mt="md" mb="xs">
         <Text size="md" fw={500}>
           {familyCode ?? ''} - {surveyNumber ?? ''}
@@ -31,7 +31,7 @@ export function HoverInfo({ familyCode, surveyNumber }: { familyCode: string | n
       </Group>
 
       {tooltip && (
-        <>
+        <ScrollArea h={400}>
           <Text>Priorities</Text>
           {tooltip.split('>>').map((text, i) => {
             const tooltipText = text.split('|');
@@ -43,12 +43,14 @@ export function HoverInfo({ familyCode, surveyNumber }: { familyCode: string | n
                   {tooltipText[1]?.split(':')[0]?.trim() || 'No data'}
                 </Badge>
                 <Text ta="left" size="xs" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 10 }}>
-                  {tooltipText[1]?.split(':')[1]?.split('$$')[0]?.trim() || ''}
+                  {
+                    tooltipText[1]?.split(':')[1]?.split('$$')[0]?.trim().includes('nan') ? 'No feedback' : tooltipText[1]?.split(':')[1]?.split('$$')[0]?.trim() 
+                  }
                 </Text>
               </Fragment>
             );
           })}
-        </>
+        </ScrollArea>
       )}
     </Card>
   );

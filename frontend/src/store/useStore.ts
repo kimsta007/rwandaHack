@@ -8,6 +8,16 @@ interface RowData {
   embedding: [number, number];
   latitude: number,
   longitude: number,
+  race: string;
+  houseHold: string;
+  housing: string;
+  lgbtq: string;
+  automobile: string;
+  education: string;
+  income: string;
+  ece: string;
+  employment: string;
+  assistance: string;
   tooltip: string;
 }
 
@@ -26,6 +36,7 @@ interface State {
   colorMap: Record<number, string>;
   legendItems: { label: string; color: string; value: number }[];
   isLoading: boolean;
+  selectedDataset: string;
   brushBox: [number, number, number, number] | null;   
   selectedGroup: string | null;
 
@@ -36,6 +47,7 @@ interface State {
   setSelectedKeys: (k: FamilyKey[]) => void;
   setSelectedIndicator: (i: number) => void;
   setSelectedFeature: (f: string) => void;
+  setSelectedDataset: (d: string) => void;
   setIsLoading: (loading: boolean) => void;
   setBrushBox: (b: [number, number, number, number] | null) => void; 
 }
@@ -50,6 +62,7 @@ export const useStore = create<State>((set) => ({
   selectedIndicator: -1,
   brushBox: null, 
   selectedGroup: null,
+  selectedDataset: 'North Carolina',
 
   colorMap: {
     1: '#984ea3',
@@ -70,6 +83,7 @@ export const useStore = create<State>((set) => ({
   setSelectedKeys: (k) => set({ selectedKeys: k }),
   setSelectedIndicator: (i) => set({ selectedIndicator: i }),
   setSelectedFeature: (f) => set({ selectedFeature: f }),
+  setSelectedDataset: (d) => set({ selectedDataset: d }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setBrushBox: (b) => set({ brushBox: b }),  
   setSelectedGroup: (group) => set({ selectedGroup: group }),

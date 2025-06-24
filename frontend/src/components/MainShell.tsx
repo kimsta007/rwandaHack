@@ -3,7 +3,9 @@ import { Heatmap } from './Heatmap';
 import { Legend } from './Legend';
 import { HoverInfo } from './HoverInfo';
 import { GeoMap } from './GeoMap';
+import { FamilyInfo } from './FamilyInfo';
 import { useState } from 'react';
+import { useStore } from '../store/useStore';
 import { Group, Grid, ScrollArea, AppShell, 
                 Burger, Drawer, Text, CloseButton, Input, 
                 Stack, NativeSelect, Divider, NumberInput,
@@ -43,8 +45,13 @@ export function MainShell(
   const [heatmapHovered, setHeatmapHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
   const [searchValue, setSearchValue] = useState('');
+  const { selectedDataset, setSelectedDataset } = useStore();
 
-  return (
+const handleDatasetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  setSelectedDataset(e.currentTarget.value);
+}
+
+return (
  <AppShell
       header={{ height: 60 }}
       navbar={{
@@ -58,7 +65,7 @@ export function MainShell(
         <Group h="100%" px="0" justify="space-between">
           <Group h="100%" px="md">
             <Burger opened={opened} onClick={open} visibleFrom="sm" size="sm" />
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>North Carolina - Poverty Stoplight</h1>
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{ selectedDataset } - Poverty Stoplight</h1>
           </Group>
 
           <Group h="100%" align="center" gap="md">
@@ -84,17 +91,17 @@ export function MainShell(
       </AppShell.Header> 
       
       <AppShell.Navbar p="md" withBorder style={{ overflow: 'hidden', height: '100vh' }}>
-        <ScrollArea style={{ height: '100%' }}>
             <HoverInfo familyCode={(heatmapHovered ?? scatterHovered)?.familyCode ?? null}
                     surveyNumber={(heatmapHovered ?? scatterHovered)?.surveyNumber ?? null} />
-        </ScrollArea>
+            <FamilyInfo familyCode={(heatmapHovered ?? scatterHovered)?.familyCode ?? null}
+                    surveyNumber={(heatmapHovered ?? scatterHovered)?.surveyNumber ?? null} />
         <Drawer opened={opened} onClose={close}
           transitionProps={{ transition: 'rotate-left', duration: 150, timingFunction: 'linear' }}
           zIndex={1000}
         >
           {/* Add UI Controls Here Color by > Cluster */}
           <Text size="md" td="underline">Data controls</Text>
-          <NativeSelect label="Dataset" data={['North Carolina', 'Rwanda']} />
+          <NativeSelect label="Dataset" data={['North Carolina', 'Rwanda']} onChange={handleDatasetChange} value={selectedDataset}/>
           <NativeSelect label="Survey" data={['All', '1', '2', '3']} />
           <Divider my="md" />
           <Text size="md" td="underline">UMAP controls</Text>

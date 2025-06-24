@@ -14,71 +14,99 @@ export function GeoMap({
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.CircleMarker | null>(null);
   const brushedMarkersRef = useRef<L.LayerGroup | null>(null);
-  const { data, selectedIndices, brushBox } = useStore();
+  const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
+  const { data, selectedIndices, brushBox, selectedDataset, colorMap, selectedFeature } = useStore();
 
-  const ncBounds = L.latLngBounds(
-    L.latLng(33.8423, -84.3219),  
-    L.latLng(36.5881, -75.4606)  
-  );
+  const datasetBounds: Record<string, L.LatLngBounds> = {
+    'North Carolina': L.latLngBounds(
+      L.latLng(33.8423, -84.3219),
+      L.latLng(36.5881, -75.4606)
+    ),
+    'Rwanda': L.latLngBounds(
+      L.latLng(-2.84, 28.86),
+      L.latLng(-1.02, 30.89)
+    )
+  };
 
   useEffect(() => {
-    if (mapRef.current || !mapContainerRef.current) return;
+    if (!mapContainerRef.current) return;
 
-    const map = L.map(mapContainerRef.current, {
-      center: [35.7596, -79.0193], 
-      zoom: 6,
-      maxBounds: ncBounds,
-      minZoom: 6,
-      maxZoom: 12
-    });
+    // Initialize map if it doesn't exist
+    if (!mapRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: datasetBounds[selectedDataset].getCenter(),
+        zoom: 6,
+        maxBounds: datasetBounds[selectedDataset],
+        minZoom: 6,
+        maxZoom: 12
+      });
 
-    mapRef.current = map;
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+      mapRef.current = map;
+    }
+
+    const map = mapRef.current;
+
+    map.setMaxBounds(datasetBounds[selectedDataset]);
+    map.flyToBounds(datasetBounds[selectedDataset]);
 
     // Enforce bounds
-    map.on('drag', () => {
-      if (!ncBounds.contains(map.getCenter())) {
-        map.panInsideBounds(ncBounds, { animate: true });
+    const handleDrag = () => {
+      if (!datasetBounds[selectedDataset].contains(map.getCenter())) {
+        map.panInsideBounds(datasetBounds[selectedDataset], { animate: true });
       }
+    };
+    map.on('drag', handleDrag);
+
+    if (geoJsonLayerRef.current) {
+      geoJsonLayerRef.current.remove();
+    }
+    map.eachLayer((layer) => {
+      if (layer === brushedMarkersRef.current || layer === markerRef.current) return;
+      if ((layer as any)._url) return; 
+      map.removeLayer(layer);
     });
 
-    fetch('/data/nc.geojson')
+    fetch('/data/' + selectedDataset + '.geojson')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load GeoJSON');
         return res.json();
       })
       .then((data: GeoJSON.Feature) => {
-        L.geoJSON(data, {
+        geoJsonLayerRef.current = L.geoJSON(data, {
           style: {
             color: 'black',
-            weight: 2,
+            weight: 1.5,
             fillOpacity: 0
           }
         }).addTo(map);
       })
+      .catch(console.error);
 
+    // Add data points
     data.forEach(row => {
       const lat = row.latitude;
       const lng = row.longitude;
       if (lat && lng) {
+        const value = selectedFeature ? row.features[selectedFeature] : null;
+        const fillColor = value != null ? colorMap[value] ?? '#999' : '#ccc';
         L.circleMarker([lat, lng], {
           radius: 5,
-          color: 'white',
-          fillColor: 'black',
+          color: 'black',
+          fillColor,
           fillOpacity: 0.8,
-          weight: 2
+          weight: 1
         }).addTo(map);
       }
     });
 
     return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
+      map.off('drag', handleDrag);
     };
-  }, []);
+  }, [selectedDataset, data, selectedFeature]);
 
   useEffect(() => {
       if (!mapRef.current) return;
@@ -100,7 +128,6 @@ export function GeoMap({
       if (!match) return;
 
       markerRef.current?.remove();
-
       const marker = L.circleMarker([match.latitude, match.longitude], {
         radius: 7,
         fillColor: 'blue',

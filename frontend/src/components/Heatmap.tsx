@@ -86,7 +86,7 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
         width: number;
         height: number;
       }[];
-  }, [featureNames]);
+  }, [featureNames, selectedGroup]);
 
   const groupBoxesRef = useRef(groupBoxes);
   useEffect(() => {
@@ -157,7 +157,6 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
     headerCtx.textAlign = 'center';
     headerCtx.textBaseline = 'top';
     headerCtx.fillStyle = 'black';
-
     for (const box of groupBoxes) {
       if (selectedGroup === box.label) {
         headerCtx.fillStyle = 'black'; 
@@ -314,7 +313,7 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
         break;
       }
     }
-  }, [featureNames, selectedGroup, onGroupFeatureClick, setSelectedGroup, setIsLoading, setSelectedFeature]);
+  }, [featureNames, selectedGroup, onGroupFeatureClick, setIsLoading, setSelectedFeature]);
 
   return (
     <div style={{ 
@@ -347,7 +346,7 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
         onMouseMove={handleMouseMove}
         style={{
           overflowY: 'auto',
-          height: '71vh',
+          height: '74vh',
           position: 'relative',
           zIndex: 1,
           width: 'fit-content'
