@@ -25,7 +25,11 @@ export function GeoMap({
     'Rwanda': L.latLngBounds(
       L.latLng(-2.84, 28.86),
       L.latLng(-1.02, 30.89)
-    )
+    ),
+    'Paraguay': L.latLngBounds(
+      L.latLng(-27.6068, -62.6443), 
+      L.latLng(-19.2941, -54.2580)   
+    ),
   };
 
   useEffect(() => {

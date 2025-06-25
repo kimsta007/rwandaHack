@@ -9,13 +9,11 @@ import './App.css';
 function App() {
   const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading,
     setSelectedIndices, setSelectedKeys, setBrushBox, setSelectedGroup, setSelectedIndicator } = useStore();
-  // const [ neighbours, setNeighbours ] = useState(15);
-  // const [ minDist, setMinDist ] = useState(0.1);
-  // const [ metric, setMetric ] = useState("Euclidean");
   const [ selectedSurvey, setSelectedSurvey ] = useState("All");
-  const [ neighbours ] = useState(15);
-  const [ minDist ] = useState(0.1);
-  const [ metric ] = useState("Euclidean");
+  const [ neighbours, setNeighbours ] = useState(15);
+  const [ minDist, setMinDist ] = useState(0.1);
+  const [ metric, setMetric ] = useState("Euclidean");
+  const [ recalculate, setRecalculate ] = useState(false);
 
   const umap = useCallback(() => {
     setIsLoading(true);
@@ -35,11 +33,12 @@ function App() {
       setBrushBox(null);
       setSelectedGroup(null);
       setSelectedIndicator(-1);
-      setSelectedFeature('income');                   
+      setSelectedFeature('income'); 
+      setRecalculate(false);                  
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [setData, setFeatureNames, setSelectedFeature, selectedSurvey]);
+  }, [setData, setFeatureNames, setSelectedFeature, selectedSurvey, recalculate]);
 
   useEffect(() => {
     umap();
@@ -75,18 +74,17 @@ function App() {
           <Loader size="lg" />
         </div>
       ) : (
-        // <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
-        //   neighbours={neighbours}
-        //   minDist={minDist}
-        //   metric={metric}
-        //   setNeighbours={setNeighbours} 
-        //   setMinDist={setMinDist}/>
          <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
-          neighbours={neighbours}
           minDist={minDist}
           metric={metric}
           selectedSurvey={selectedSurvey} 
-          setSelectedSurvey={setSelectedSurvey} />
+          setSelectedSurvey={setSelectedSurvey} 
+          neighbours={neighbours}
+          setMetric={setMetric}
+          setNeighbours={setNeighbours}
+          setMinDist={setMinDist}
+          setRecalculate={setRecalculate}
+          />
         )}
     </MantineProvider>
   );

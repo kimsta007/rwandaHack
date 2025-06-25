@@ -12,22 +12,6 @@ import { Group, Grid, ScrollArea, AppShell,
                 Button} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
-// export function MainShell(
-//   { 
-//     onGroupFeatureClick, 
-//     neighbours,
-//     minDist,
-//     metric,
-//     setNeighbours,
-//     setMinDist,
-//    }: { 
-//     onGroupFeatureClick?: (groupName: string[]) => void;
-//     neighbours: number;
-//     minDist: number;
-//     metric: string;
-//     setNeighbours?: (neighbours: number) => void;
-//     setMinDist?:(minDist: number) => void;
-//   }
 export function MainShell(
   { 
     onGroupFeatureClick, 
@@ -36,6 +20,10 @@ export function MainShell(
     metric,
     selectedSurvey,
     setSelectedSurvey,
+    setMetric,
+    setNeighbours,
+    setMinDist,
+    setRecalculate,
    }: { 
     onGroupFeatureClick?: (groupName: string[]) => void;
     neighbours: number;
@@ -43,6 +31,10 @@ export function MainShell(
     metric: string;
     selectedSurvey: string;
     setSelectedSurvey: (surveyNumber: string) => void;
+    setMetric: (metric: string) => void;
+    setNeighbours: (neighbours: number) => void;
+    setMinDist:(minDist: number) => void;
+    setRecalculate: (recalculate: boolean) => void;
   }
 ) {
   const [scatterHovered, setScatterHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
@@ -57,6 +49,22 @@ const handleDatasetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 
 const handleSurveyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedSurvey(e.currentTarget.value);
+}
+
+const handleMetricChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  setMetric(e.currentTarget.value);
+} 
+
+const handleNeighboursChange = (value: string | number) => {
+    setNeighbours(typeof value === 'number' ? value : parseInt(value));
+}
+
+const handleMinDistChange = (value: string | number) => {
+    setMinDist(typeof value === 'number' ? value : parseFloat(value));
+}
+
+const handleRecalculate = () => {
+  setRecalculate(true);
 }
 
 return (
@@ -107,9 +115,8 @@ return (
           transitionProps={{ transition: 'rotate-left', duration: 150, timingFunction: 'linear' }}
           zIndex={1000}
         >
-          {/* Add UI Controls Here Color by > Cluster */}
           <Text size="md" td="underline">Data controls</Text>
-          <NativeSelect label="Dataset" data={['North Carolina', 'Rwanda']} onChange={handleDatasetChange} value={selectedDataset}/>
+          <NativeSelect label="Dataset" data={['North Carolina', 'Paraguay','Rwanda']} onChange={handleDatasetChange} value={selectedDataset}/>
           <NativeSelect label="Survey" data={['All', '1', '2', '3', '4']} onChange={handleSurveyChange} value={selectedSurvey}/>
           <Divider my="md" />
           <Text size="md" td="underline">UMAP controls</Text>
@@ -118,6 +125,7 @@ return (
             min={2}
             defaultValue={neighbours}
             max={100}
+            onChange={handleNeighboursChange}
           />
           <NumberInput
             label="Minimum Distance (min_dist)"
@@ -126,10 +134,11 @@ return (
             defaultValue={minDist}
             fixedDecimalScale
             max={100.0}
+            onChange={handleMinDistChange}
           />
           <NativeSelect label="Metric" data={['Euclidean', 'Manhattan', 'Jaccard', 'Hamming', 'Correlation']} 
-          defaultValue={metric}/>
-          <Button variant="danger" mt='md'>Re-calculate</Button>
+          defaultValue={metric} onChange={handleMetricChange}/>
+          <Button variant="danger" mt='md' onClick={handleRecalculate}>Re-calculate</Button>
         </Drawer>
       </AppShell.Navbar>
 
