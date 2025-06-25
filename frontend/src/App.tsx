@@ -7,10 +7,12 @@ import "@mantine/core/styles.css";
 import './App.css';
 
 function App() {
-  const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading } = useStore();
+  const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading,
+    setSelectedIndices, setSelectedKeys, setBrushBox, setSelectedGroup, setSelectedIndicator } = useStore();
   // const [ neighbours, setNeighbours ] = useState(15);
   // const [ minDist, setMinDist ] = useState(0.1);
   // const [ metric, setMetric ] = useState("Euclidean");
+  const [ selectedSurvey, setSelectedSurvey ] = useState("All");
   const [ neighbours ] = useState(15);
   const [ minDist ] = useState(0.1);
   const [ metric ] = useState("Euclidean");
@@ -21,15 +23,23 @@ function App() {
       filename: "nc_aspire.xlsx",
       n_neighbors: neighbours,
       min_dist: minDist,
-      metric: metric.toLowerCase()
+      metric: metric.toLowerCase(),
+      survey: selectedSurvey
     }).then(res => {
+      console.log("Umap response:", res.data);
       setData(res.data.data);               
       setFeatureNames(res.data.featureNames);   
+
+      setSelectedIndices([]);                    
+      setSelectedKeys([]);
+      setBrushBox(null);
+      setSelectedGroup(null);
+      setSelectedIndicator(-1);
       setSelectedFeature('income');                   
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [setData, setFeatureNames, setSelectedFeature]);
+  }, [setData, setFeatureNames, setSelectedFeature, selectedSurvey]);
 
   useEffect(() => {
     umap();
@@ -50,7 +60,8 @@ function App() {
       selectedFeatures: groupFeature,
       n_neighbors: neighbours,
       min_dist: minDist,
-      metric: metric.toLowerCase()
+      metric: metric.toLowerCase(),
+      survey: selectedSurvey
     });
 
     setData(res.data.data);  
@@ -73,7 +84,9 @@ function App() {
          <MainShell onGroupFeatureClick={handleGroupFeatureClick} 
           neighbours={neighbours}
           minDist={minDist}
-          metric={metric}/>
+          metric={metric}
+          selectedSurvey={selectedSurvey} 
+          setSelectedSurvey={setSelectedSurvey} />
         )}
     </MantineProvider>
   );

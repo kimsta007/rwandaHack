@@ -34,11 +34,15 @@ export function MainShell(
     neighbours,
     minDist,
     metric,
+    selectedSurvey,
+    setSelectedSurvey,
    }: { 
     onGroupFeatureClick?: (groupName: string[]) => void;
     neighbours: number;
     minDist: number;
     metric: string;
+    selectedSurvey: string;
+    setSelectedSurvey: (surveyNumber: string) => void;
   }
 ) {
   const [scatterHovered, setScatterHovered] = useState<{ familyCode: string, surveyNumber: string } | null>(null);
@@ -49,6 +53,10 @@ export function MainShell(
 
 const handleDatasetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   setSelectedDataset(e.currentTarget.value);
+}
+
+const handleSurveyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  setSelectedSurvey(e.currentTarget.value);
 }
 
 return (
@@ -102,7 +110,7 @@ return (
           {/* Add UI Controls Here Color by > Cluster */}
           <Text size="md" td="underline">Data controls</Text>
           <NativeSelect label="Dataset" data={['North Carolina', 'Rwanda']} onChange={handleDatasetChange} value={selectedDataset}/>
-          <NativeSelect label="Survey" data={['All', '1', '2', '3']} />
+          <NativeSelect label="Survey" data={['All', '1', '2', '3', '4']} onChange={handleSurveyChange} value={selectedSurvey}/>
           <Divider my="md" />
           <Text size="md" td="underline">UMAP controls</Text>
            <NumberInput

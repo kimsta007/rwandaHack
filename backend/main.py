@@ -27,6 +27,7 @@ class UMAPRequest(BaseModel):
     n_neighbors: int = 15
     min_dist: float = 0.1
     metric: str = "euclidean"
+    survey: str = "All"
     selectedFeatures: Optional[List[str]] = None
 
 def to_camel_case(text: str) -> str:
@@ -63,6 +64,11 @@ def compute_umap(req: UMAPRequest):
     df_families = pd.read_excel(filepath, sheet_name='Families')
     df_families['surveyNumber'] = df_families['surveyNumber'].str.replace('º', '', regex=False)
     df_families['surveyDate'] = pd.to_datetime(df_families['createdAt']).dt.strftime('%Y %b')
+
+    if req.survey != 'All':
+        df_indicators = df_indicators[df_indicators['surveyNumber'] == str(req.survey)]
+        df_priorities = df_priorities[df_priorities['surveyNumber'] == str(req.survey)]
+        df_families = df_families[df_families['surveyNumber'] == str(req.survey)]
 
     excluded_cols = ['organization', 'project', 'familyCode', 'createdAt', 'surveyNumber', 'reds', 'yellows', 'greens']
     all_feature_cols = [col for col in df_indicators.columns if col not in excluded_cols]
