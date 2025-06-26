@@ -5,6 +5,7 @@ import { HoverInfo } from './HoverInfo';
 import { GeoMap } from './GeoMap';
 import { FamilyInfo } from './FamilyInfo';
 import { useState } from 'react';
+import logo from '../assets/logo.png';
 import { useStore } from '../store/useStore';
 import { Group, Grid, ScrollArea, AppShell, 
                 Burger, Drawer, Text, CloseButton, Input, 
@@ -81,7 +82,10 @@ return (
         <Group h="100%" px="0" justify="space-between">
           <Group h="100%" px="md">
             <Burger opened={opened} onClick={open} visibleFrom="sm" size="sm" />
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{ selectedDataset } - Poverty Stoplight</h1>
+            <img
+                src={logo}
+                style={{ height: "40px", marginRight: "100px" }} />
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Poverty Stoplight - { selectedDataset }</h1>
           </Group>
 
           <Group h="100%" align="center" gap="md">
