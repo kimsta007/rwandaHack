@@ -1,5 +1,27 @@
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { useStore } from '../store/useStore';
+
+const createTexture = (ctx: CanvasRenderingContext2D) => {
+  const patternCanvas = document.createElement('canvas');
+  patternCanvas.width = 6;
+  patternCanvas.height = 6;
+  const patternCtx = patternCanvas.getContext('2d');
+  if (!patternCtx) return null;
+
+  patternCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  patternCtx.fillRect(0, 0, 6, 6);
+  patternCtx.strokeStyle = 'rgba(0, 0, 0, 1)';
+  patternCtx.lineWidth = 1;
+
+  patternCtx.beginPath();
+  patternCtx.moveTo(0, 3);
+  patternCtx.lineTo(3, 0);
+  patternCtx.moveTo(3, 6);
+  patternCtx.lineTo(6, 3);
+  patternCtx.stroke();
+
+  return ctx.createPattern(patternCanvas, 'repeat');
+};
 
 const featureGroups = [
   { name: 'Income & Employment', features: ['income', 'savings', 'credit', 'bankServices', 'debt', 'budget', 'employabilityReadiness',
@@ -34,6 +56,16 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
   const labelWidth = 400;
   const groupLabelHeight = 30;
   const dateLabelWidth = 100;
+
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    content: {
+      good: number,
+      needsImprovement: number,
+      bad: number,
+    };
+  } | null>(null);
 
   const selectedRows = useMemo(() => {
     return (
@@ -194,6 +226,9 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
       ctx.fillText(label, x, y);
     }
 
+    const texture = createTexture(ctx);
+
+
     // Draw symbols 
     for (let i = 0; i < rows; i++) {
       const row = selectedRows[i];
@@ -212,29 +247,20 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
         const heatmapValue = row.features[feature];
         if (heatmapValue !== symbolValue) return;
 
-        const x = colIndex * cellSize + gap + labelWidth / 2 + cellSize / 2;
-        const y = i * cellSize + gap / 2 + cellSize / 2;
-
         ctx.strokeStyle = 'black';
         ctx.fillStyle = 'black';
         ctx.lineWidth = 2;
-
-        switch (symbolValue) {
-          case 1: ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.stroke(); break;
-          case 3: ctx.beginPath(); ctx.rect(x - 5, y - 5, 10, 10); ctx.stroke(); break;
-          case 2:
-            ctx.beginPath();
-            ctx.moveTo(x, y - 6);
-            ctx.lineTo(x + 6, y + 6);
-            ctx.lineTo(x - 6, y + 6);
-            ctx.closePath();
-            ctx.stroke();
-            break;
-          default:
-            ctx.beginPath();
-            ctx.moveTo(x - 6, y);
-            ctx.lineTo(x + 6, y);
-            ctx.stroke();
+        if (texture && symbolValue > 0) {
+          ctx.save();
+          ctx.fillStyle = texture;
+          ctx.globalCompositeOperation = 'multiply';
+          ctx.fillRect(
+            colIndex * cellSize + gap + labelWidth / 2,
+            i * cellSize + gap / 2,
+            cellSize - gap,
+            cellSize - gap
+          );
+          ctx.restore();
         }
       });
     }
@@ -254,16 +280,41 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
 
     if (mx < 0 || my < 0) {
       onHover?.(null);
+      setTooltip(null);
       return;
     }
 
     const row = Math.floor(my / cellSize);
+    const col = Math.floor(mx / cellSize);
 
-    if (row >= 0 && row < selectedRows.length) {
+    if (row >= 0 && row < selectedRows.length && col >= 0 && col < featureNames.length) {
       const hoveredRow = selectedRows[row];
+      const feature = featureNames[col];
+      let goodCount = 0;
+      let needsImprovementCount = 0;
+      let badCount = 0;
+      selectedRows.forEach((family) =>{
+        if (family.features[feature] === 3) {
+          goodCount++;
+        } else if (family.features[feature] === 2) {
+          needsImprovementCount++;
+        } else if (family.features[feature] === 1) {
+          badCount++;
+        } 
+      });
       onHover?.({ familyCode: hoveredRow.familyCode, surveyNumber: hoveredRow.surveyNumber });
+      setTooltip({
+        x: e.clientX,
+        y: e.clientY,
+        content: {
+          good: goodCount, 
+          needsImprovement: needsImprovementCount, 
+          bad: badCount
+        },
+      });
     } else {
       onHover?.(null);
+      setTooltip(null);
     }
   }, [selectedRows, onHover]);
 
@@ -316,48 +367,72 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
   }, [featureNames, selectedGroup, onGroupFeatureClick, setIsLoading, setSelectedFeature]);
 
   return (
-    <div style={{ 
-      position: 'relative', 
-      marginTop: 5,
-      width: '100%',
-      overflowX: 'auto'
-    }}>
-      {/* Fix header */}
-      <div 
-        style={{ 
-          position: 'sticky', 
-          top: 0, 
-          left: 0,
-          zIndex: 2,
-          backgroundColor: 'white',
-          pointerEvents: 'auto',
-          width: 'fit-content'
-        }}
-        onClick={handleClick}
-      >
-        <canvas
-          ref={headerCanvasRef}
-          style={{ display: 'block' }}
-        />
+    <>
+      {tooltip && (
+        <div
+          style={{
+            position: 'fixed',
+            top: (tooltip?.y ?? 0) + 12,
+            left: (tooltip?.x ?? 0) + 12,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            zIndex: 1000,
+          }}
+        >
+            <div>Good: {tooltip.content.good}</div>
+            <div>Needs Improvement: {tooltip.content.needsImprovement}</div>
+            <div>Bad: {tooltip.content.bad}</div>
+        </div>
+      )}
+      <div style={{ 
+        position: 'relative', 
+        marginTop: 5,
+        width: '100%',
+        overflowX: 'auto'
+      }}>
+        {/* Fix header */}
+        <div 
+          style={{ 
+            position: 'sticky', 
+            top: 0, 
+            left: 0,
+            zIndex: 2,
+            backgroundColor: 'white',
+            pointerEvents: 'auto',
+            width: 'fit-content'
+          }}
+          onClick={handleClick}
+        >
+          <canvas
+            ref={headerCanvasRef}
+            style={{ display: 'block' }}
+          />
+        </div>
+        
+        <div
+          ref={containerRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setTooltip(null)}
+          style={{
+            overflowY: 'auto',
+            height: '74vh',
+            position: 'relative',
+            zIndex: 1,
+            width: 'fit-content'
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            style={{ display: 'block' }}
+          />
+        </div>
       </div>
-      
-      <div
-        ref={containerRef}
-        onMouseMove={handleMouseMove}
-        style={{
-          overflowY: 'auto',
-          height: '74vh',
-          position: 'relative',
-          zIndex: 1,
-          width: 'fit-content'
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          style={{ display: 'block' }}
-        />
-      </div>
-    </div>
+    </>
   );
 }
 

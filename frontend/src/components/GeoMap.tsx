@@ -134,7 +134,7 @@ export function GeoMap({
       markerRef.current?.remove();
       const marker = L.circleMarker([match.latitude, match.longitude], {
         radius: 7,
-        fillColor: 'blue',
+        fillColor: '#4e79a7',
         fillOpacity: 0.9,
         color: 'white',
         weight: 2,

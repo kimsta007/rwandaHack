@@ -65,16 +65,16 @@ export const useStore = create<State>((set) => ({
   selectedDataset: 'North Carolina',
 
   colorMap: {
-    1: '#984ea3',
-    2: '#dbdb1d',
-    3: '#4daf4a',
+    1: '#b07aa1',
+    2: '#edc948',
+    3: '#59a14f',
   },
 
   legendItems: [
-    { label: 'Not recorded', color: '#bdbdbd', value: 0 },
-    { label: 'Good', color: '#4daf4a', value: 3 },
-    { label: 'Needs Improvement', color: '#dbdb1d', value: 2 },
-    { label: 'Bad', color: '#984ea3', value: 1 },
+    { label: 'Not recorded', color: '#bab0ac', value: 0 },
+    { label: 'Good', color: '#59a14f', value: 3 },
+    { label: 'Needs Improvement', color: '#edc948', value: 2 },
+    { label: 'Bad', color: '#b07aa1', value: 1 },
   ],
 
   setData: (data) => set({ data }),
