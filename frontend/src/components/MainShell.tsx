@@ -7,10 +7,11 @@ import { FamilyInfo } from './FamilyInfo';
 import { useState } from 'react';
 import logo from '../assets/logo.png';
 import { useStore } from '../store/useStore';
-import { Group, Grid, ScrollArea, AppShell, 
+import { Group, ScrollArea, AppShell, 
                 Burger, Drawer, Text, CloseButton, Input, 
                 Stack, NativeSelect, Divider, NumberInput,
-                Button} from '@mantine/core';
+                Button,
+                Flex} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
 export function MainShell(
@@ -84,7 +85,7 @@ return (
             <Burger opened={opened} onClick={open} visibleFrom="sm" size="sm" />
             <img
                 src={logo}
-                style={{ height: "40px", marginRight: "100px" }} />
+                style={{ height: "40px" }} />
             <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Poverty Stoplight - { selectedDataset }</h1>
           </Group>
 
@@ -147,39 +148,36 @@ return (
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Grid gutter={0}> 
-          <Grid.Col span={4}>
-            <Stack gap="md"> 
-              <Legend />
-              <ScatterPlot 
-                onHover={(key) => {
-                  setScatterHovered(key);
-                  setHeatmapHovered(null);  
-                }} 
-                searchValue={searchValue}
-                heatmapHovered={heatmapHovered}
-              />
-              <GeoMap 
-                scatterHovered={scatterHovered}
-                heatmapHovered={heatmapHovered}
-              />
-            </Stack>
-          </Grid.Col>
+        <Flex>
+          <Stack gap="md"> 
+            <Legend />
+            <ScatterPlot 
+              onHover={(key) => {
+                setScatterHovered(key);
+                setHeatmapHovered(null);  
+              }} 
+              searchValue={searchValue}
+              heatmapHovered={heatmapHovered}
+            />
+            <GeoMap 
+              scatterHovered={scatterHovered}
+              heatmapHovered={heatmapHovered}
+            />
+          </Stack>
 
-          <Grid.Col span={8}>
-            <ScrollArea h="calc(100vh - 80px)">
-              <Heatmap 
-                onGroupFeatureClick={onGroupFeatureClick} 
-                family={scatterHovered} 
-                onHover={(key) => {
-                  setHeatmapHovered(key);
-                  setScatterHovered(null);  
-                }} 
-                searchValue={searchValue}
-              />
-            </ScrollArea>
-          </Grid.Col>
-        </Grid>
+
+          <ScrollArea h="calc(100vh - 80px)" flex={1}>
+            <Heatmap 
+              onGroupFeatureClick={onGroupFeatureClick} 
+              family={scatterHovered} 
+              onHover={(key) => {
+                setHeatmapHovered(key);
+                setScatterHovered(null);  
+              }} 
+              searchValue={searchValue}
+            />
+          </ScrollArea>
+        </Flex>
       </AppShell.Main>
     </AppShell>
 );
