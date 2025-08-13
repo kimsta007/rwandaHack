@@ -7,7 +7,7 @@ import "@mantine/core/styles.css";
 import './App.css';
 
 function App() {
-  const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading,
+  const { setData, setFeatureNames, setIsLoading, setSelectedFeature, isLoading, selectedDataset,
     setSelectedIndices, setSelectedKeys, setBrushBox, setSelectedGroup, setSelectedIndicator } = useStore();
   const [ selectedSurvey, setSelectedSurvey ] = useState("All");
   const [ neighbours, setNeighbours ] = useState(15);
@@ -17,28 +17,28 @@ function App() {
 
   const umap = useCallback(() => {
     setIsLoading(true);
+    console.log(selectedDataset);
     axios.post("http://34.201.136.23/umap", {
-      filename: "nc_aspire.xlsx",
+    //axios.post("http://localhost:8000/umap", {
+      filename: selectedDataset.trim().concat(".xlsx"),
       n_neighbors: neighbours,
       min_dist: minDist,
       metric: metric.toLowerCase(),
       survey: selectedSurvey
     }).then(res => {
-      console.log("Umap response:", res.data);
       setData(res.data.data);               
       setFeatureNames(res.data.featureNames);   
-
       setSelectedIndices([]);                    
       setSelectedKeys([]);
       setBrushBox(null);
       setSelectedGroup(null);
       setSelectedIndicator(-1);
       setSelectedFeature('income'); 
-      setRecalculate(false);                  
+      //setRecalculate(false);                  
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [setData, setFeatureNames, setSelectedFeature, selectedSurvey, recalculate]);
+  }, [setData, setFeatureNames, setSelectedFeature, selectedSurvey, recalculate, selectedDataset]);
 
   useEffect(() => {
     umap();
@@ -55,7 +55,7 @@ function App() {
 
   const handleGroupFeatureClick = async (groupFeature: string[]) => {
     const res = await axios.post("http://34.201.136.23/umap", {
-      filename: "nc_aspire.xlsx",
+      filename: selectedDataset.trim().concat(".xlsx"),
       selectedFeatures: groupFeature,
       n_neighbors: neighbours,
       min_dist: minDist,

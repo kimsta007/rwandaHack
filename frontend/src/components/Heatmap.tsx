@@ -24,18 +24,18 @@ const createTexture = (ctx: CanvasRenderingContext2D) => {
 };
 
 const featureGroups = [
-  { name: 'Income & Employment', features: ['income', 'savings', 'credit', 'bankServices', 'debt', 'budget', 'employabilityReadiness',
-    'stableIncome', 'identification']},
-  { name: 'Health & Environment', features: ['environment', 'garbage', 'water', 'healthServices', 'mentalHealthServices', 'nutritiousDiet',
+   { name: 'D1', features: ['income', 'diversification', 'documentation', 'savings', 'credit', 'bankServices', 'debt', 'budget', 'employabilityReadiness',
+     'stableIncome', 'identification']},
+  { name: 'D2', features: ['environment', 'trash', 'garbage', 'water', 'healthServices', 'mentalHealthServices', 'nutritiousDiet',
     'foodAccess', 'physicalActivity', 'addiction', 'householdViolence', 'hygiene', 'sexualHealth', 'healthyTeeth', 'healthyVision',
-  'vaccines', 'insurance']},  
-  { name: 'Housing & Infrastructure', features: ['stableHousing', 'safeHouse', 'enoughSpace', 'kitchen', 'bathroom', 'appliances',
-    'phone', 'clothing', 'safety', 'securityOfProperty', 'electricity', 'transportation']},
-  { name: 'Education and Culture', features: ['schooling', 'literacy', 'incarceration', 'generateIncome', 'internet', 'entertainment',
-    'discrimination', 'community']},
-  { name: 'O & P', features: ['closeRelationships', 'civicEngagement', 'resolveProblems'] },
-  { name: 'Interiority & Motivation', features: ['selfEfficacy', 'selfConfidence', 'emotionalWellBeing', 'emotionalIntelligence',
-    'spiritualWellBeing', 'agency', 'continuousLearning']},
+  'vaccines', 'insurance', 'accessToHealth', 'healthChecks', 'nutrition', 'responsibleConsumption', 'mentalhealth', 'healthyVision', 'vaccines']},  
+  { name: 'D3', features: ['stableHousing', 'safeHouse', 'enoughSpace', 'kitchen', 'bathroom', 'appliances',
+    'phone', 'clothing', 'safety', 'securityOfProperty', 'electricity', 'transportation', 'safeHousing', 'comfort', 'bedrooms', 'personalSafety', 'roads']},
+  { name: 'D4', features: ['schooling', 'literacy', 'incarceration', 'generateIncome', 'internet', 'entertainment',
+    'discrimination', 'community', 'diversity']},
+  { name: 'D5', features: ['closeRelationships', 'civicEngagement', 'resolveProblems'] },
+  { name: 'D6', features: ['selfEfficacy', 'selfConfidence', 'emotionalWellBeing', 'emotionalIntelligence', 'advocacy', 'familyCoexistence',
+    'spiritualWellBeing', 'agency', 'continuousLearning', 'autonomy', 'selfEsteem', 'emotionalControl', 'goals', 'votes', 'supportNetwork', 'childProtection']},
 ];
 
 export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
@@ -87,11 +87,12 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
   }, [data, family, selectedIndices, searchValue]);
 
   const groupBoxes = useMemo(() => {
+    const lookupIndex = new Map(featureNames.map((f, i) => [f, i]));
     return featureGroups
       .map(group => {
         const groupFeatureIndices = group.features
-          .map(f => featureNames.indexOf(f))
-          .filter(i => i !== -1);
+          .map(f => lookupIndex.get(f))
+          .filter((i): i is number => i !== undefined);
         
         if (groupFeatureIndices.length === 0) return null;
 
@@ -227,7 +228,6 @@ export function Heatmap({ onGroupFeatureClick, onHover, family, searchValue }: {
     }
 
     const texture = createTexture(ctx);
-
 
     // Draw symbols 
     for (let i = 0; i < rows; i++) {
